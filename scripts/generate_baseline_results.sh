@@ -48,6 +48,9 @@ echo "Python script found at $SCRIPT_PATH"
 
 # --- Hugging Face Credentials Check ---
 echo "--- Hugging Face Credentials Check ---"
+
+export HUGGING_FACE_HUB_TOKEN="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"
+
 # Check for the environment variable
 if [ -n "$HUGGING_FACE_HUB_TOKEN" ]; then
     # WARNING: Uncommenting the next line will print your token to the logs.
