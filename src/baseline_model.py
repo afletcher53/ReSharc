@@ -49,8 +49,9 @@ def generate_datestamp():
 
 
 def load_model(model_name=None):
-    model_name = config.get("baseline_model").lower()
+    model_name = config.get("baseline_model")
 
+    print(f"Loading model: {model_name}")
     model = AutoModelForCausalLM.from_pretrained(
         model_name,
         torch_dtype="auto",
