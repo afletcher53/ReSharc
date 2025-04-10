@@ -11,41 +11,79 @@
 #SBATCH --output=log/%j.%x.out
 #SBATCH --error=log/%j.%x.err
 
+# --- Environment Setup ---
+echo "Loading Anaconda module..."
 module load Anaconda3/2024.02-1
+echo "Activating Conda environment 'goldilocks'..."
 eval "$(conda shell.bash hook)"
 conda activate goldilocks
+echo "Conda environment activated."
 
-# Print Python and conda information for debugging
+# --- Print Debug Information ---
+echo "--- Debug Information ---"
+echo "Which Python:"
 which python
+echo "Python Version:"
 python --version
+echo "Conda Info:"
 conda info
-
+echo "GPU Status:"
 nvidia-smi
+echo "--- End Debug Information ---"
 
-# Check if Python is available
+# --- Check Python Availability ---
 if ! command -v python3 &> /dev/null; then
     echo "Error: Python 3 is not installed or not in PATH"
     exit 1
 fi
+echo "Python 3 found."
 
-# Path to the Python script
+# --- Check Python Script Existence ---
 SCRIPT_PATH="./src/baseline_model.py"
-
-# Check if the Python script exists
 if [ ! -f "$SCRIPT_PATH" ]; then
     echo "Error: Python script not found at $SCRIPT_PATH"
     exit 1
 fi
+echo "Python script found at $SCRIPT_PATH"
+
+# --- Hugging Face Credentials Check ---
+echo "--- Hugging Face Credentials Check ---"
+# Check for the environment variable
+if [ -n "$HUGGING_FACE_HUB_TOKEN" ]; then
+    # WARNING: Uncommenting the next line will print your token to the logs.
+    # Be cautious about log visibility and security.
+    # echo "HUGGING_FACE_HUB_TOKEN environment variable is SET."
+    # Safer alternative: Just confirm it's set without printing the value
+    echo "HUGGING_FACE_HUB_TOKEN environment variable is SET."
+    # Optionally, print first few characters for identification without full exposure:
+    # echo "HUGGING_FACE_HUB_TOKEN starts with: ${HUGGING_FACE_HUB_TOKEN:0:4}..."
+else
+    echo "HUGGING_FACE_HUB_TOKEN environment variable is NOT SET."
+fi
+
+# Attempt to check login status using the CLI tool
+echo "Running 'huggingface-cli whoami' to check authentication status:"
+if command -v huggingface-cli &> /dev/null; then
+    huggingface-cli whoami
+else
+    echo "huggingface-cli command not found. Cannot run 'whoami'."
+fi
+echo "--- End Hugging Face Credentials Check ---"
 
 
-
+# --- Define Models ---
 models=("meta-llama/Llama-3.2-3B-Instruct" "meta-llama/Llama-3.1-8B-Instruct" "meta-llama/Llama-3.3-70B-Instruct" "Qwen/Qwen2.5-7B-Instruct" "Qwen/Qwen2.5-14B-Instruct" "Qwen/Qwen2.5-Coder-7B-Instruct" "Qwen/Qwen2.5-Coder-14B-Instruct")
 
 
+# --- Run Experiments ---
+echo "Starting model runs..."
 # Iterate through all combinations
 for model in "${models[@]}"; do
+ echo "----------------------------------------"
  echo "Running with model: $model"
+ echo "----------------------------------------"
  python3 "$SCRIPT_PATH" --model_name "$model"
+ echo "Finished model: $model"
 done
 
-echo "All completed."
+echo "All models completed."
