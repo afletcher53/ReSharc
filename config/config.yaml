@@ -80,4 +80,4 @@ openrouter_settings:
 baseline_models:
   default_model: "Qwen/Qwen2.5-Coder-0.5B-Instruct" # Baseline model prior to SFT/DPO/GRPO
   max_tokens: 4000 # Max tokens for the baseline model
-  limit: 10
+  limit: None
