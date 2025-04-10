@@ -55,7 +55,7 @@ def prompt_model(model, tokenizer, prompt, config):
     return response
 
 
-def load_arc_test_set(config, limit=None):
+def load_arc_test_set(config):
     """Load the ARC challenges and their solutions. Note that we are using the evaluation dataset as the test set."""
     testing_file_challenges = os.path.join(
         config.get("arc_data_dir"), config.get("evaluation_challenges_file")
@@ -71,9 +71,6 @@ def load_arc_test_set(config, limit=None):
         testing_solutions = json.load(f)
     testing_challenges = {k: testing_challenges[k] for k in testing_challenges.keys()}
     testing_solutions = {k: testing_solutions[k] for k in testing_challenges.keys()}
-    if limit is not None:
-        testing_challenges = dict(list(testing_challenges.items())[:limit])
-        testing_solutions = dict(list(testing_solutions.items())[:limit])
     return (testing_challenges, testing_solutions)
 
 
@@ -252,9 +249,7 @@ if __name__ == "__main__":
     config["run_datetimestamp"] = generate_datestamp()
     config["baseline_model"] = args.model_name
 
-    testing_challenges, testing_solutions = load_arc_test_set(
-        config, limit=config["baseline_models"]["limit"]
-    )
+    testing_challenges, testing_solutions = load_arc_test_set(config)
 
     print(
         "Loaded ARC challenges and solutions - Evaluation Dataset. Running Inference on base models."
