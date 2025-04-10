@@ -13,6 +13,10 @@ import pandas as pd
 from sklearn.model_selection import train_test_split
 from transformers import AutoModelForCausalLM, AutoTokenizer
 
+from huggingface_hub import login
+
+login("placeholder")
+
 try:
     with open("config/config.yaml", "r") as f:
         config = yaml.safe_load(f)
