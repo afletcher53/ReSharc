@@ -5,11 +5,38 @@ api_provider: "openrouter"  # <--- CHANGE THIS TO "openrouter" TO USE OPENROUTER
 
 # --- Generic Settings ---
 arc_data_dir: "data/arc/"
+arc_outputs_dir: "data/outputs/"
+
 training_challenges_file: "arc-agi_training_challenges.json"
 training_solutions_file: "arc-agi_training_solutions.json"
+
+evaluation_challenges_file: "arc-agi_evaluation_challenges.json"
+evaluation_solutions_file: "arc-agi_evaluation_solutions.json"
+
 raw_generations_output_file: "data/generated_sft/raw_generations.jsonl"
 filtered_sft_output_file: "data/filtered_sft/sft_dataset.jsonl"
 max_tasks_to_process: 200 # Max tasks for either provider
+
+# Base prompt template for the ARC task
+BASE_PROMPT_TEMPLATE: |
+  You are an expert in solving Abstraction and Reasoning Corpus (ARC) problems. Analyze the provided input/output examples and determine the transformation rule. Apply this rule to the final test input grid.
+
+  **Task Description:**
+  The user will provide several pairs of example input grids and their corresponding output grids. They represent a hidden transformation rule. Finally, a single test input grid is provided. Your goal is to deduce the rule from the examples and apply it to the test input grid to produce the correct test output grid.
+
+  **Output Format:**
+  Provide your step-by-step reasoning within `<thinking>` tags. Explain how you identified the pattern and how you are applying it to the test input.
+  Provide the final predicted output grid for the test input within `<answer>` tags. The grid should be formatted as a list of lists, with integers representing colors. Example: [[1, 0], [0, 1]]
+
+  Ensure that you check the consistency of your answer.
+
+  ---
+  **Current Task:**
+
+  {task_prompt_section}
+
+  ---
+  Now, please solve the current task using the specified format. Remember to output the reasoning in <thinking> tags and the final grid as a list of lists in <answer> tags.
 
 # --- Google Generative AI Settings ---
 google_settings:
@@ -50,4 +77,7 @@ openrouter_settings:
      # frequency_penalty: 0.0
      # presence_penalty: 0.0
 
-baseline_model: "Qwen/Qwen2.5-Coder-1.5B-Instruct" # Baseline model prior to SFT/DPO/GRPO
+baseline_models:
+  default_model: "Qwen/Qwen2.5-Coder-0.5B-Instruct" # Baseline model prior to SFT/DPO/GRPO
+  max_tokens: 100000 # Max tokens for the baseline model
+  limit: 10
