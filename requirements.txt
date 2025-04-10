@@ -1,0 +1,17 @@
+# requirements.txt
+
+# Core
+python-dotenv # For loading environment variables (like API keys)
+PyYAML      # For reading the config file
+
+# LLM Clients (add/remove based on the teachers you use)
+google-generativeai
+openai
+anthropic
+
+# Potentially needed later for SFT/RL
+# transformers
+# datasets
+# accelerate
+# torch
+# trl

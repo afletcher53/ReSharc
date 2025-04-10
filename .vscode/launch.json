@@ -1,0 +1,18 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Python: Run phase1_generate.py", // Or your existing configuration name
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/scripts/phase1_generate.py", // Correct path to your script
+            "console": "integratedTerminal",
+            "cwd": "${workspaceFolder}", // Optional but good practice: set CWD to project root
+            "env": {
+                // Add this 'env' section
+                "PYTHONPATH": "${workspaceFolder}"
+            }
+        }
+        // Add other configurations if you have them
+    ]
+}
