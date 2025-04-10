@@ -39,7 +39,7 @@ fi
 
 
 
-models=("Qwen/Qwen2.5-Coder-0.5B-Instruct")
+models=("allenai/Llama-3.1-Tulu-3-8B","allenai/Llama-3.1-Tulu-3-70B","meta-llama/Llama-3.2-1B-Instruct","meta-llama/Llama-3.2-3B-Instruct", "meta-llama/Llama-3.1-8B-Instruct", "meta-llama/Llama-3.3-70B-Instruct", "Qwen/Qwen2.5-7B-Instruct", "Qwen/Qwen2.5-14B-Instruct", "Qwen/Qwen2.5-Coder-7B-Instruct", "Qwen/Qwen2.5-Coder-14B-Instruct")
 
 
 # Iterate through all combinations
