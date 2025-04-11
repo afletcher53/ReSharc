@@ -116,7 +116,7 @@ def load_cot_responses(tokenizer, cofig):
 
     cot_data_lengths = sorted([len(d["raw_response"]) for d in cot_data])
     max_len_threshold = max(
-        cot_data_lengths[: int(len(cot_data_lengths) * config["max_len_threshold"])]
+        cot_data_lengths[: int(len(cot_data_lengths) * config["max_threshold"])]
     )
 
     included_task_ids = set([d["task_id"] for d in cot_data])
@@ -263,8 +263,9 @@ def main():
         task_type="CAUSAL_LM",
     )
 
-    model = get_peft_model(model, config)
-    model.print_trainable_parameters()
+    peft_model = get_peft_model(model, config)
+    peft_model.print_trainable_parameters()
+    peft_model.config.gradient_checkpointing = True
 
     batch_size = 1
 
@@ -287,7 +288,7 @@ def main():
     data_collator = DataCollatorForLanguageModeling(tokenizer, mlm=False)
 
     trainer = Trainer(
-        model,
+        peft_model,
         args,
         train_dataset=train_ds.remove_columns(
             ["input", "cot_task_id", "output", "chat_str_input"]

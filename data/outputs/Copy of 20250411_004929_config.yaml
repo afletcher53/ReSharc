@@ -1,0 +1,69 @@
+BASE_PROMPT_TEMPLATE: 'You are an expert in solving Abstraction and Reasoning Corpus
+  (ARC) problems. Analyze the provided input/output examples and determine the transformation
+  rule. Apply this rule to the final test input grid.
+
+
+  **Task Description:**
+
+  The user will provide several pairs of example input grids and their corresponding
+  output grids. They represent a hidden transformation rule. Finally, a single test
+  input grid is provided. Your goal is to deduce the rule from the examples and apply
+  it to the test input grid to produce the correct test output grid.
+
+
+  **Output Format:**
+
+  Provide your step-by-step reasoning within `<thinking>` tags. Explain how you identified
+  the pattern and how you are applying it to the test input.
+
+  Provide the final predicted output grid for the test input within `<answer>` tags.
+  The grid should be formatted as a list of lists, with integers representing colors.
+  Example: [[1, 0], [0, 1]]
+
+
+  Ensure that you check the consistency of your answer.
+
+
+  ---
+
+  **Current Task:**
+
+
+  {task_prompt_section}
+
+
+  ---
+
+  Now, please solve the current task using the specified format. Remember to output
+  the reasoning in <thinking> tags and the final grid as a list of lists in <answer>
+  tags.
+
+  '
+api_provider: openrouter
+arc_data_dir: data/arc/
+arc_outputs_dir: data/outputs/
+baseline_model: meta-llama/Llama-3.1-8B-Instruct
+baseline_models:
+  default_model: Qwen/Qwen2.5-Coder-0.5B-Instruct
+  limit: None
+  max_tokens: 4000
+evaluation_challenges_file: arc-agi_evaluation_challenges.json
+evaluation_solutions_file: arc-agi_evaluation_solutions.json
+filtered_sft_output_file: data/filtered_sft/sft_dataset.jsonl
+google_settings:
+  api_key_env_var: GOOGLE_API_KEY
+  teacher_models:
+  - openai/o3-mini-high
+max_tasks_to_process: 200
+openrouter_settings:
+  app_name: arc-grpo-trainer
+  generation_config:
+    max_tokens: 100000
+    temperature: 0.3
+  site_url: http://localhost
+  teacher_models:
+  - google/gemini-2.5-pro-preview-03-25
+raw_generations_output_file: data/generated_sft/raw_generations.jsonl
+run_datetimestamp: '20250411_004929'
+training_challenges_file: arc-agi_training_challenges.json
+training_solutions_file: arc-agi_training_solutions.json

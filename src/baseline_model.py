@@ -9,6 +9,9 @@ from utils import run_scoring
 import tqdm
 import yaml
 from transformers import AutoModelForCausalLM, AutoTokenizer
+# set huggingface cache dir to /home/ubuntu/.cache/huggingface
+
+os.environ["TRANSFORMERS_CACHE"] = "/mnt/parscratch/users/aaron/huggingface"
 
 try:
     with open("config/config.yaml", "r") as f:
