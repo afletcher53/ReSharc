@@ -252,11 +252,6 @@ def main():
         lora_alpha=32,
         target_modules=[
             "q_proj",
-            "up_proj",
-            "o_proj",
-            "k_proj",
-            "down_proj",
-            "gate_proj",
             "v_proj",
         ],
         lora_dropout=0.1,
