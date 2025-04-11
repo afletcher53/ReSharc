@@ -33,26 +33,49 @@ def load_model(config):
         device_map="auto",
     )
     tokenizer = AutoTokenizer.from_pretrained(model_name)
+    tokenizer.padding_side = "left"
     return model, tokenizer
 
 
-def prompt_model(model, tokenizer, prompt, config):
+def prompt_model(model, tokenizer, prompts, config):
     """Prompts the model with the given input and returns the output."""
-    text = tokenizer.apply_chat_template(
-        prompt, tokenize=False, add_generation_prompt=True
+    # prompts are a list of list of dictionary
+    texts = tokenizer.apply_chat_template(
+        prompts,
+        tokenize=False,
+        add_generation_prompt=True,
     )
-    model_inputs = tokenizer([text], return_tensors="pt").to(model.device)
+
+    # save texts to json file
+    output_dir = config.get("arc_outputs_dir")
+    os.makedirs(output_dir, exist_ok=True)
+    output_file_path = os.path.join(
+        f"./data/outputs/{config['run_datetimestamp']}_baseline_replies_chat_string.json"
+    )
+    with open(output_file_path, "a", encoding="utf-8") as f:
+        json.dump(texts, f, indent=4)
+
+    model_inputs = tokenizer(
+        texts, return_tensors="pt", padding=True, padding_side="left"
+    ).to(model.device)
     generated_ids = model.generate(
         **model_inputs,
         max_new_tokens=config["baseline_models"]["max_tokens"],
     )
-    generated_ids = [
-        output_ids[len(input_ids) :]
-        for input_ids, output_ids in zip(model_inputs.input_ids, generated_ids)
-    ]
 
-    response = tokenizer.batch_decode(generated_ids, skip_special_tokens=True)[0]
-    return response
+    # Remove the input_ids from the generated_ids
+    # We only want the generated part of the output
+    # This is the part after the input_ids
+
+    generated_ids = generated_ids[:, len(model_inputs.input_ids[0]) :]
+
+    # generated_ids = [
+    #     output_ids[len(input_ids) :]
+    #     for input_ids, output_ids in zip(model_inputs.input_ids, generated_ids)
+    # ]
+
+    responses = tokenizer.batch_decode(generated_ids, skip_special_tokens=True)
+    return responses
 
 
 def load_arc_test_set(config):
@@ -193,7 +216,7 @@ def generate_task_prompt_sections(testing_challenges, config):
     return task_prompt_sections
 
 
-def baseline(testing_challenges, config):
+def baseline(testing_challenges, config, batch_size=2):
     test_ids = list(testing_challenges.keys())
     save_config(config)
 
@@ -204,17 +227,26 @@ def baseline(testing_challenges, config):
 
     task_prompt_sections = generate_task_prompt_sections(testing_challenges, config)
 
-    for task_id in tqdm.tqdm(test_ids):
-        task_prompt_section = task_prompt_sections.get(task_id)
+    for i in range(0, len(test_ids), batch_size):
+        if i + batch_size > len(test_ids):
+            batch_size = len(test_ids) - i
+        batch_ids = test_ids[i : i + batch_size]
+        batch_task_prompt_sections = [
+            task_prompt_sections[task_id] for task_id in batch_ids
+        ]
 
-        res = prompt_model(
+        responses = prompt_model(
             model=model,
             tokenizer=tokenizer,
-            prompt=task_prompt_section,
+            prompts=batch_task_prompt_sections,
             config=config,
         )
 
-        query_list = find_last_list_of_lists(res)
+        query_list = [find_last_list_of_lists(res) for res in responses]
+
+        for short_i, (task_id, res) in enumerate(zip(batch_ids, responses)):
+            answers[task_id] = res
+            answers_parsed[task_id] = query_list[short_i]
 
         output_file_path = os.path.join(
             config["arc_outputs_dir"],
@@ -229,9 +261,6 @@ def baseline(testing_challenges, config):
         )
         with open(output_file_path, "w", encoding="utf-8") as f:
             json.dump(answers_parsed, f, indent=4)
-
-        answers[task_id] = res
-        answers_parsed[task_id] = query_list
 
     return answers, answers_parsed
 

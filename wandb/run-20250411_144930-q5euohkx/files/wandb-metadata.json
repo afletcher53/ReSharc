@@ -1,0 +1,128 @@
+{
+    "os": "Linux-6.14.0-15-generic-x86_64-with-glibc2.41",
+    "python": "3.11.8",
+    "heartbeatAt": "2025-04-11T13:49:31.111388",
+    "startedAt": "2025-04-11T13:49:30.555025",
+    "docker": null,
+    "cuda": null,
+    "args": [],
+    "state": "running",
+    "program": "/home/aaron/Desktop/ARC_GPRO_TRAINER/scripts/sft_model.py",
+    "codePathLocal": "scripts/sft_model.py",
+    "codePath": "scripts/sft_model.py",
+    "git": {
+        "remote": "https://github.com/afletcher53/ReSharc.git",
+        "commit": "2e171ee67ad41d6d4bebb9ba05b9e346d324de75"
+    },
+    "email": "afletcher53@gmail.com",
+    "root": "/home/aaron/Desktop/ARC_GPRO_TRAINER",
+    "host": "aaron",
+    "username": "aaron",
+    "executable": "/home/aaron/anaconda3/envs/dolphin/bin/python",
+    "cpu_count": 8,
+    "cpu_count_logical": 16,
+    "cpu_freq": {
+        "current": 4290.233374999999,
+        "min": 2992.0,
+        "max": 5582.0
+    },
+    "cpu_freq_per_core": [
+        {
+            "current": 4365.318,
+            "min": 2992.0,
+            "max": 5582.0
+        },
+        {
+            "current": 4342.687,
+            "min": 2992.0,
+            "max": 5582.0
+        },
+        {
+            "current": 4366.095,
+            "min": 2992.0,
+            "max": 5582.0
+        },
+        {
+            "current": 4368.751,
+            "min": 2992.0,
+            "max": 5582.0
+        },
+        {
+            "current": 4368.251,
+            "min": 2992.0,
+            "max": 5582.0
+        },
+        {
+            "current": 4382.014,
+            "min": 2992.0,
+            "max": 5582.0
+        },
+        {
+            "current": 4345.816,
+            "min": 2992.0,
+            "max": 5582.0
+        },
+        {
+            "current": 4381.831,
+            "min": 2992.0,
+            "max": 5582.0
+        },
+        {
+            "current": 4344.061,
+            "min": 2992.0,
+            "max": 5582.0
+        },
+        {
+            "current": 4359.304,
+            "min": 2992.0,
+            "max": 5582.0
+        },
+        {
+            "current": 4273.793,
+            "min": 2992.0,
+            "max": 5582.0
+        },
+        {
+            "current": 4282.659,
+            "min": 2992.0,
+            "max": 5582.0
+        },
+        {
+            "current": 4296.385,
+            "min": 2992.0,
+            "max": 5582.0
+        },
+        {
+            "current": 4377.52,
+            "min": 2992.0,
+            "max": 5582.0
+        },
+        {
+            "current": 4346.89,
+            "min": 2992.0,
+            "max": 5582.0
+        },
+        {
+            "current": 4273.565,
+            "min": 2992.0,
+            "max": 5582.0
+        }
+    ],
+    "disk": {
+        "/": {
+            "total": 912.6906433105469,
+            "used": 864.6064414978027
+        }
+    },
+    "gpu": "NVIDIA GeForce RTX 4070 Ti SUPER",
+    "gpu_count": 1,
+    "gpu_devices": [
+        {
+            "name": "NVIDIA GeForce RTX 4070 Ti SUPER",
+            "memory_total": 17171480576
+        }
+    ],
+    "memory": {
+        "total": 59.40290451049805
+    }
+}

@@ -1,0 +1,5 @@
+2025-04-11 15:19:06,499 INFO    StreamThr :276458 [internal.py:wandb_internal():85] W&B internal server running at pid: 276458, started at: 2025-04-11 15:19:06.498536
+2025-04-11 15:19:06,501 DEBUG   HandlerThread:276458 [handler.py:handle_request():158] handle_request: status
+2025-04-11 15:19:06,502 INFO    WriterThread:276458 [datastore.py:open_for_write():87] open: /home/aaron/Desktop/ARC_GPRO_TRAINER/wandb/run-20250411_151906-fx5l9koj/run-fx5l9koj.wandb
+2025-04-11 15:19:06,503 DEBUG   SenderThread:276458 [sender.py:send():391] send: header
+2025-04-11 15:19:06,503 DEBUG   SenderThread:276458 [sender.py:send():391] send: run

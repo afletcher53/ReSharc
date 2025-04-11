@@ -1,0 +1,5 @@
+2025-04-11 15:20:12,374 INFO    StreamThr :278228 [internal.py:wandb_internal():85] W&B internal server running at pid: 278228, started at: 2025-04-11 15:20:12.373601
+2025-04-11 15:20:12,375 DEBUG   HandlerThread:278228 [handler.py:handle_request():158] handle_request: status
+2025-04-11 15:20:12,377 INFO    WriterThread:278228 [datastore.py:open_for_write():87] open: /home/aaron/Desktop/ARC_GPRO_TRAINER/wandb/run-20250411_152012-4k70vfni/run-4k70vfni.wandb
+2025-04-11 15:20:12,378 DEBUG   SenderThread:278228 [sender.py:send():391] send: header
+2025-04-11 15:20:12,378 DEBUG   SenderThread:278228 [sender.py:send():391] send: run

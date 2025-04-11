@@ -6,7 +6,12 @@ from pathlib import Path
 import yaml
 from sklearn.model_selection import train_test_split
 from transformers import AutoTokenizer
+from datasets import Dataset
+
 from transformers import Trainer, TrainingArguments
+from transformers import AutoModelForCausalLM, DataCollatorForLanguageModeling
+from peft import LoraConfig, get_peft_model
+import wandb
 
 try:
     with open("config/config.yaml", "r") as f:
@@ -18,24 +23,11 @@ except yaml.YAMLError as e:
     print(f"Error parsing config file: {e}")
     sys.exit(1)
 
-BASE_PROMPT_TEMPLATE = """You are an expert in solving Abstraction and Reasoning Corpus (ARC) problems. Analyze the provided input/output examples and determine the transformation rule. Apply this rule to the final test input grid.
+BASE_PROMPT_TEMPLATE = config["BASE_PROMPT_TEMPLATE"]
 
-**Task Description:**
-The user will provide several pairs of example input grids and their corresponding output grids. They represent a hidden transformation rule. Finally, a single test input grid is provided. Your goal is to deduce the rule from the examples and apply it to the test input grid to produce the correct test output grid.
-
-**Output Format:**
-Provide your step-by-step reasoning within `<thinking>` tags. Explain how you identified the pattern and how you are applying it to the test input.
-Provide the final predicted output grid for the test input within `<answer>` tags. The grid should be formatted as a JSON list of lists, with integers representing colors. Example: [[1, 0], [0, 1]]
-
-Ensure that you check the consistency of your answer.
-
----
-**Current Task:**
-
-{task_prompt_section}
----
-Now, please solve the current task using the specified format. Remember to output the reasoning in <thinking> tags and the final grid as a JSON list of lists in <answer> tags.
-"""
+run = wandb.init(
+    project="no_hope_no_vram",  # Replace with your project name
+)
 
 
 def grid_to_str(grid: list[list[int]]):
@@ -79,8 +71,74 @@ def data_instance_to_chat_input(challenge_data_instance, tokenizer):
     return text
 
 
-def load_arc_challenges_soltuions():
+def create_task_prompt_section(task_data):
+    """Formats the examples and test input for a single ARC task."""
+    prompt_section = ""
+    # Format training examples
+    if task_data.get("train"):
+        for i, pair in enumerate(task_data["train"]):
+            if "input" in pair and "output" in pair:
+                prompt_section += (
+                    f"Example {i + 1} Input:\n{grid_to_str(pair['input'])}\n"
+                )
+                prompt_section += (
+                    f"Example {i + 1} Output:\n{grid_to_str(pair['output'])}\n\n"
+                )
+            else:
+                prompt_section += f"Example {i + 1}: [Malformed train pair data]\n\n"
+
+    # Format test input
+    if (
+        task_data.get("test") and task_data["test"]
+    ):  # Check if list exists and is not empty
+        if "input" in task_data["test"][0]:
+            test_input_grid = task_data["test"][0]["input"]
+            prompt_section += f"Test Input:\n{grid_to_str(test_input_grid)}\n"
+        else:
+            prompt_section += (
+                "Test Input: [Test case exists but missing 'input' grid]\n"
+            )
+    else:
+        prompt_section += "Test Input: [No test input data provided for this task]\n"
+
+    return prompt_section.strip()
+
+
+def load_cot_responses(tokenizer, cofig):
     """Load the ARC challenges and their solutions."""
+
+    # load COT dataset.
+
+    cot_data_file = "./data/filtered_sft/combined.jsonl"
+
+    with open(cot_data_file, "r", encoding="utf-8") as f:
+        cot_data = [json.loads(line) for line in f.readlines()]
+
+    cot_data_lengths = sorted([len(d["raw_response"]) for d in cot_data])
+    max_len_threshold = max(
+        cot_data_lengths[: int(len(cot_data_lengths) * config["max_len_threshold"])]
+    )
+
+    included_task_ids = set([d["task_id"] for d in cot_data])
+
+    from collections import defaultdict
+
+    all_data = defaultdict(list)
+    for task_id in included_task_ids:
+        for d in cot_data:
+            if d["task_id"] == task_id:
+                if isinstance(d["raw_response"], list):
+                    print(len(d["raw_response"][0]))
+                    if len(d["raw_response"][0]) < max_len_threshold:
+                        all_data[task_id].append(d["raw_response"][0])
+                else:
+                    if len(d["raw_response"]) < max_len_threshold:
+                        all_data[task_id].append(d["raw_response"])
+
+    train_ids, val_ids = train_test_split(
+        list(all_data.keys()), test_size=0.2, random_state=42
+    )
+
     challenges_file_path = config.get("training_challenges_file")
     challenges_dir = "./data/arc/arc-agi_training_challenges.json"
     if not challenges_file_path:
@@ -90,115 +148,103 @@ def load_arc_challenges_soltuions():
     with open(challenges_dir, "r", encoding="utf-8") as f:
         challenges = json.load(f)
 
-    ids = challenges.keys()
+    _mappings = []
+    for set_of_ids in (train_ids, val_ids):
+        ids_to_input_prompts_mapping = {}
+        for single_id in set_of_ids:
+            task_prompt_section = create_task_prompt_section(challenges[single_id])
+            full_prompt = config["BASE_PROMPT_TEMPLATE"].format(
+                task_prompt_section=task_prompt_section
+            )
 
-    # Split the IDs into training and validation sets
-    train_ids, val_ids = train_test_split(list(ids), test_size=0.2, random_state=42)
+            ids_to_input_prompts_mapping[single_id] = full_prompt
+        _mappings.append(ids_to_input_prompts_mapping)
 
-    print(f"Training IDs: {len(train_ids)}")
-    print(f"Validation IDs: {len(val_ids)}")
-    print(f"Total IDs: {len(ids)}")
+    train_ids_to_input_prompts, val_ids_to_input_prompts = _mappings
 
-    training_challenges = {k: challenges[k] for k in train_ids}
-    validation_challenges = {k: challenges[k] for k in val_ids}
+    training_dataset = []
+    for i in train_ids:
+        for num_in_var, j in enumerate(all_data[i]):
+            training_dataset.append(
+                (f"{i}_{num_in_var}", train_ids_to_input_prompts[i], j)
+            )
 
-    solutions_dir = "./data/arc/arc-agi_training_solutions.json"
-    with open(solutions_dir, "r", encoding="utf-8") as f:
-        solutions = json.load(f)
+    validation_dataset = []
+    for i in val_ids:
+        for num_in_var, j in enumerate(all_data[i]):
+            validation_dataset.append(
+                (f"{i}_{num_in_var}", val_ids_to_input_prompts[i], j)
+            )
 
-    training_solutions = {k: solutions[k] for k in train_ids}
-    validation_solutions = {k: solutions[k] for k in val_ids}
-
-    testing_dir = "./data/arc/arc-agi_test_challenges.json"
-    with open(testing_dir, "r", encoding="utf-8") as f:
-        testing_challenges = json.load(f)
-    testing_challenges = {k: testing_challenges[k] for k in testing_challenges.keys()}
-
-    testing_solution_dir = "./data/arc/arc-agi_evaluation_solutions.json"
-    with open(testing_solution_dir, "r", encoding="utf-8") as f:
-        testing_solutions = json.load(f)
-    testing_solutions = {k: testing_solutions[k] for k in testing_challenges.keys()}
-    return (
-        training_challenges,
-        training_solutions,
-        validation_challenges,
-        validation_solutions,
-        testing_challenges,
-        testing_solutions,
+    train_ds = Dataset.from_dict(
+        {
+            "cot_task_id": [x[0] for x in training_dataset],
+            "input": [x[1] for x in training_dataset],
+            "output": [x[2] for x in training_dataset],
+            "chat_str_input": [
+                tokenizer.apply_chat_template(
+                    [{"role": "user", "content": x[1]}],
+                    tokenize=False,
+                    add_generation_prompt=True,
+                )
+                for x in training_dataset
+            ],
+        }
+    )
+    val_ds = Dataset.from_dict(
+        {
+            "cot_task_id": [x[0] for x in validation_dataset],
+            "input": [x[1] for x in validation_dataset],
+            "output": [x[2] for x in validation_dataset],
+            "chat_str_input": [
+                tokenizer.apply_chat_template(
+                    [{"role": "user", "content": x[1]}],
+                    tokenize=False,
+                    add_generation_prompt=True,
+                )
+                for x in validation_dataset
+            ],
+        }
     )
 
+    def tokenize_and_mask(example):
+        full_text = example["chat_str_input"] + " " + example["output"]
+        tokenized = tokenizer(
+            full_text,
+        )
 
-from datasets import Dataset
+        labels = tokenized["input_ids"].copy()
 
+        prompt_len = len(tokenizer(example["chat_str_input"])["input_ids"])
+        labels[:prompt_len] = [-100] * prompt_len
 
-def merge_jsons(tgt_dr="./data/generated_sft/"):
-    # find all json files in the directory
+        tokenized["labels"] = labels
 
-    merged_outputs = []
-    final_list = {}
+        print("input id length", len(tokenized["input_ids"]))
+        # limit the length of the input to 1024 tokens
 
-    for file in tgt_dr.rglob("*.jsonl"):
-        # load the jsonl file as a list
-        with open(file, "r") as f:
-            _data = [json.loads(line) for line in f.readlines()]
-            merged_outputs.extend(_data)
+        return tokenized
 
-    return merge_jsons
+    tokenized_map_train_ds = train_ds.map(tokenize_and_mask)
+    tokenized_map_val_ds = val_ds.map(tokenize_and_mask)
+    return tokenized_map_train_ds, tokenized_map_val_ds
 
 
 def main():
-    # load datasets
-    (
-        training_challenges,
-        training_solutions,
-        validation_challenges,
-        validation_solutions,
-        testing_challenges,
-        testing_solutions,
-    ) = load_arc_challenges_soltuions()
-
     with open("config/config.yaml", "r") as f:
         config = yaml.safe_load(f)
+    tokenizer = AutoTokenizer.from_pretrained(
+        config.get("baseline_models")["default_model"]
+    )
 
-    print(f"Training challenges: {len(training_challenges)}")
-    print(f"Training solutions: {len(training_solutions)}")
-    print(f"Validation challenges: {len(validation_challenges)}")
-    print(f"Validation solutions: {len(validation_solutions)}")
-    print(f"Testing challenges: {len(testing_challenges)}")
-    print(f"Testing solutions: {len(testing_solutions)}")
+    tokenizer.padding_side = "left"
+    tokenizer.pad_token = tokenizer.eos_token
 
-    # Convert to datasets
+    (train_ds, val_ds) = load_cot_responses(tokenizer, config)
 
-    # TODO: verify this works tomorrow
-    training_challenges = merge_jsons(tgt_dr="./data/generated_sft/")
-
-    dataset_dict = {"inputs": [], "labels": []}
-
-    training_keys = list(training_challenges.keys())
-    print(f"Training keys: {len(training_keys)}")
-    tokenizer = AutoTokenizer.from_pretrained(config.get("baseline_model"))
-
-    for i, key in enumerate(training_keys):
-        train = data_instance_to_chat_input(training_challenges[key], tokenizer)
-        # GENERATE multiple labels corresponding to the same input, because each sample is passed into 10 different models as labels
-        label = training_solutions[key][0]
-
-        dataset_dict["inputs"].append(train)
-        dataset_dict["labels"].append(label)
-
-    ds = Dataset.from_dict(dataset_dict)
-
-    # convert to string format
-
-    print(ds)
-
-    from transformers import AutoModelForCausalLM
-
-    model = AutoModelForCausalLM.from_pretrained(config.get("baseline_model"))
-
-    from peft import LoraConfig, get_peft_model
-
-    print(model)
+    model = AutoModelForCausalLM.from_pretrained(
+        config.get("baseline_models")["default_model"]
+    )
 
     config = LoraConfig(
         r=16,
@@ -217,39 +263,42 @@ def main():
         task_type="CAUSAL_LM",
     )
 
-    print(model)
     model = get_peft_model(model, config)
     model.print_trainable_parameters()
 
-    # account = "stevhliu"
-    # peft_model_id = f"{account}/google/vit-base-patch16-224-in21k-lora"
-    batch_size = 128
+    batch_size = 1
 
-    # args = TrainingArguments(
-    #     # peft_model_id,
-    #     remove_unused_columns=False,
-    #     eval_strategy="epoch",
-    #     save_strategy="epoch",
-    #     learning_rate=5e-3,
-    #     per_device_train_batch_size=batch_size,
-    #     gradient_accumulation_steps=4,
-    #     per_device_eval_batch_size=batch_size,
-    #     fp16=True,
-    #     num_train_epochs=1,
-    #     logging_steps=1,
-    #     load_best_model_at_end=True,
-    #     label_names=["labels"],
-    # )
+    args = TrainingArguments(
+        remove_unused_columns=False,
+        eval_strategy="epoch",
+        save_strategy="epoch",
+        learning_rate=5e-3,
+        per_device_train_batch_size=batch_size,
+        gradient_accumulation_steps=1,
+        per_device_eval_batch_size=batch_size,
+        fp16=True,
+        num_train_epochs=5,
+        logging_steps=5,
+        load_best_model_at_end=True,
+        label_names=["labels"],
+        output_dir="./data/outputs",
+    )
 
-    # trainer = Trainer(
-    #     model,
-    #     args,
-    #     train_dataset=train_ds,
-    #     eval_dataset=val_ds,
-    #     tokenizer=tokenizer,
-    #     data_collator=collate_fn,
-    # )
-    # trainer.train()
+    data_collator = DataCollatorForLanguageModeling(tokenizer, mlm=False)
+
+    trainer = Trainer(
+        model,
+        args,
+        train_dataset=train_ds.remove_columns(
+            ["input", "cot_task_id", "output", "chat_str_input"]
+        ),
+        eval_dataset=val_ds.remove_columns(
+            ["input", "cot_task_id", "output", "chat_str_input"]
+        ),
+        processing_class=tokenizer,
+        data_collator=data_collator,
+    )
+    trainer.train()
 
 
 main()

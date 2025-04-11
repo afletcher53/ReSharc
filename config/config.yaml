@@ -58,12 +58,12 @@ google_settings:
 # --- OpenRouter Settings ---
 openrouter_settings:
   # Environment variable holding the OpenRouter API Key
-  # api_key_env_var: "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"
+  api_key_env_var: "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"
   # List of OpenRouter models to use if api_provider is "openrouter"
   # Find models at: https://openrouter.ai/models
   teacher_models:
     # - "google/gemini-flash-1.5" # Example OpenRouter identifier
-    - "google/gemini-2.5-pro-preview-03-25"
+    - "openrouter/optimus-alpha"
     # - "mistralai/mistral-7b-instruct"
   # Optional: Recommended headers for OpenRouter
   # See: https://openrouter.ai/docs#headers
@@ -78,6 +78,6 @@ openrouter_settings:
      # presence_penalty: 0.0
 
 baseline_models:
-  default_model: "Qwen/Qwen2.5-Coder-0.5B-Instruct" # Baseline model prior to SFT/DPO/GRPO
+  default_model: "Qwen/Qwen2.5-Coder-0.5B-Instruct-GPTQ-Int4" # Baseline model prior to SFT/DPO/GRPO
   max_tokens: 4000 # Max tokens for the baseline model
   limit: None
