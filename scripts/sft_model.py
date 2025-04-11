@@ -1,9 +1,6 @@
 import json
 import sys
-from pathlib import Path
 
-
-import torch
 import yaml
 from sklearn.model_selection import train_test_split
 from transformers import AutoTokenizer
@@ -13,7 +10,7 @@ from transformers import Trainer, TrainingArguments
 from transformers import AutoModelForCausalLM, DataCollatorForLanguageModeling
 from peft import LoraConfig, get_peft_model
 import wandb
-import pynvml
+
 
 try:
     with open("config/config.yaml", "r") as f:
@@ -28,30 +25,8 @@ except yaml.YAMLError as e:
 BASE_PROMPT_TEMPLATE = config["BASE_PROMPT_TEMPLATE"]
 
 run = wandb.init(
-    project="no_hope_no_vram",  # Replace with your project name
+    project="no_hope_no_vram",
 )
-
-
-def print_gpu_memory_usage():
-    if torch.cuda.is_available():
-        print(f"Device: {torch.cuda.get_device_name(0)}")
-        allocated = torch.cuda.memory_allocated(0) / 1024**2
-        reserved = torch.cuda.memory_reserved(0) / 1024**2  # aka cached
-        print(f"  Allocated: {allocated:.2f} MB")
-        print(f"  Reserved (Cached): {reserved:.2f} MB")
-
-        try:
-            pynvml.nvmlInit()
-            handle = pynvml.nvmlDeviceGetHandleByIndex(0)
-            info = pynvml.nvmlDeviceGetMemoryInfo(handle)
-            print(f"  Total: {info.total / 1024**2:.2f} MB")
-            print(f"  Free: {info.free / 1024**2:.2f} MB")
-            print(f"  Used (Total - Free): {(info.total - info.free) / 1024**2:.2f} MB")
-            pynvml.nvmlShutdown()
-        except Exception as e:
-            print(f"  pynvml not available or failed: {e}")
-    else:
-        print("CUDA not available.")
 
 
 def grid_to_str(grid: list[list[int]]):
@@ -98,7 +73,6 @@ def data_instance_to_chat_input(challenge_data_instance, tokenizer):
 def create_task_prompt_section(task_data):
     """Formats the examples and test input for a single ARC task."""
     prompt_section = ""
-    # Format training examples
     if task_data.get("train"):
         for i, pair in enumerate(task_data["train"]):
             if "input" in pair and "output" in pair:
@@ -110,11 +84,7 @@ def create_task_prompt_section(task_data):
                 )
             else:
                 prompt_section += f"Example {i + 1}: [Malformed train pair data]\n\n"
-
-    # Format test input
-    if (
-        task_data.get("test") and task_data["test"]
-    ):  # Check if list exists and is not empty
+    if task_data.get("test") and task_data["test"]:
         if "input" in task_data["test"][0]:
             test_input_grid = task_data["test"][0]["input"]
             prompt_section += f"Test Input:\n{grid_to_str(test_input_grid)}\n"
@@ -130,11 +100,7 @@ def create_task_prompt_section(task_data):
 
 def load_cot_responses(tokenizer, cofig):
     """Load the ARC challenges and their solutions."""
-
-    # load COT dataset.
-
     cot_data_file = "./data/filtered_sft/combined.jsonl"
-
     with open(cot_data_file, "r", encoding="utf-8") as f:
         cot_data = [json.loads(line) for line in f.readlines()]
 
@@ -185,12 +151,7 @@ def load_cot_responses(tokenizer, cofig):
                 if isinstance(d["raw_response"], list):
                     if len(d["raw_response"][0]) < max_len_threshold:
                         grid = find_last_list_of_lists(d["raw_response"][0])
-                        # remove spaces and new lines
-                        # grid = [[int(x) for x in row if x != ""] for row in grid]
-                        # grid_str = grid_to_str(grid)
                         if grid is not None:
-                            # grid = [[int(x) for x in row if x != ""] for row in grid]
-
                             all_data[task_id].append(grid_to_str(grid))
 
                 else:
@@ -277,6 +238,11 @@ def load_cot_responses(tokenizer, cofig):
             full_text,
         )
 
+        seq_len = len(tokenized["input_ids"])
+        # Log lengths, especially long ones
+        if seq_len > 4096:  # Adjust this threshold based on expectations
+            print(f"INFO: Found long tokenized sequence length: {seq_len}")
+
         labels = tokenized["input_ids"].copy()
 
         prompt_len = len(tokenizer(example["chat_str_input"])["input_ids"])
@@ -291,6 +257,11 @@ def load_cot_responses(tokenizer, cofig):
     return tokenized_map_train_ds, tokenized_map_val_ds
 
 
+import torch
+from transformers import BitsAndBytesConfig
+from peft import prepare_model_for_kbit_training
+
+
 def main():
     with open("config/config.yaml", "r") as f:
         config = yaml.safe_load(f)
@@ -301,19 +272,25 @@ def main():
     tokenizer.padding_side = "left"
     tokenizer.pad_token = tokenizer.eos_token
 
-    print("--- GPU Memory before Dataset load ---")
-    print_gpu_memory_usage()
-
     (train_ds, val_ds) = load_cot_responses(tokenizer, config)
 
-    print("--- GPU Memory after Dataset load ---")
-    print_gpu_memory_usage()
-
-    model = AutoModelForCausalLM.from_pretrained(
-        config.get("baseline_models")["default_model"]
+    quantization_config = BitsAndBytesConfig(
+        load_in_4bit=True,
+        bnb_4bit_quant_type="nf4",  # Recommended type
+        bnb_4bit_compute_dtype=torch.bfloat16,  # Or torch.float16 if BF16 not supported
+        bnb_4bit_use_double_quant=True,  # Optional further memory saving
     )
 
-    print(model)
+    model = AutoModelForCausalLM.from_pretrained(
+        config.get("baseline_models")["default_model"],
+        attn_implementation="flash_attention_2",
+        device_map="auto",
+        quantization_config=quantization_config,
+    )
+
+    # Prepare the model for k-bit training *before* applying LoRA
+    model.config.use_cache = False
+    model = prepare_model_for_kbit_training(model)
 
     config = LoraConfig(
         r=4,
@@ -339,19 +316,21 @@ def main():
     batch_size = 1
 
     args = TrainingArguments(
-        remove_unused_columns=False,
+        gradient_checkpointing=True,
+        remove_unused_columns=True,
         eval_strategy="epoch",
         save_strategy="epoch",
         learning_rate=5e-3,
         per_device_train_batch_size=batch_size,
-        gradient_accumulation_steps=1,
+        gradient_accumulation_steps=32,
         per_device_eval_batch_size=batch_size,
-        fp16=True,
+        bf16=True,
         num_train_epochs=5,
         logging_steps=5,
         load_best_model_at_end=True,
         label_names=["labels"],
         output_dir="./data/outputs",
+        optim="adafactor",
     )
 
     data_collator = DataCollatorForLanguageModeling(tokenizer, mlm=False)

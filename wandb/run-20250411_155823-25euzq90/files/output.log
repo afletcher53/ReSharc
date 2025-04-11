@@ -1,9 +1,0 @@
---- GPU Memory before Dataset load ---
-Device: NVIDIA GeForce RTX 4070 Ti SUPER
-  Allocated: 0.00 MB
-  Reserved (Cached): 0.00 MB
---- GPU Memory after Dataset load ---
-Device: NVIDIA GeForce RTX 4070 Ti SUPER
-  Allocated: 0.00 MB
-  Reserved (Cached): 0.00 MB
-Map: 100%|███████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 86/86 [00:00<00:00, 247.90 examples/s]

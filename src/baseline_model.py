@@ -11,7 +11,7 @@ from utils import run_scoring
 import tqdm
 import yaml
 from transformers import AutoModelForCausalLM, AutoTokenizer
-# set huggingface cache dir to /home/ubuntu/.cache/huggingface
+
 
 os.environ["TRANSFORMERS_CACHE"] = "/mnt/parscratch/users/aaron/huggingface"
 
@@ -72,16 +72,7 @@ def prompt_model(model, tokenizer, prompts, config):
         max_new_tokens=config["baseline_models"]["max_tokens"],
     )
 
-    # Remove the input_ids from the generated_ids
-    # We only want the generated part of the output
-    # This is the part after the input_ids
-
     generated_ids = generated_ids[:, len(model_inputs.input_ids[0]) :]
-
-    # generated_ids = [
-    #     output_ids[len(input_ids) :]
-    #     for input_ids, output_ids in zip(model_inputs.input_ids, generated_ids)
-    # ]
 
     responses = tokenizer.batch_decode(generated_ids, skip_special_tokens=True)
     return responses

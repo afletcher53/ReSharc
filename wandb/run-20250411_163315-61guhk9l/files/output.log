@@ -1,6 +1,0 @@
---- GPU Memory before Dataset load ---
-Device: NVIDIA GeForce RTX 4070 Ti SUPER
-  Allocated: 0.00 MB
-  Reserved (Cached): 0.00 MB
-  Total: 16376.00 MB
-  Free: 14882.25 MB

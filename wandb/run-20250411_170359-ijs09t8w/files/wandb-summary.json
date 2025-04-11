@@ -1,1 +1,0 @@
-{"profiling/Time taken: GRPOTrainer._get_per_token_logps": 0.25174410700128647, "_timestamp": 1744387446.8433537, "_runtime": 7.069735765457153, "_step": 2, "profiling/Time taken: GRPOTrainer.reward_len": 6.160699922475033e-05, "profiling/Time taken: GRPOTrainer._prepare_inputs": 3.181339319999097, "_wandb": {"runtime": 6}}

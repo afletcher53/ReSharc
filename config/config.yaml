@@ -38,6 +38,13 @@ BASE_PROMPT_TEMPLATE: |
   ---
   Now, please solve the current task using the specified format. Remember to output the reasoning in <thinking> tags and the final grid as a list of lists in <answer> tags.
 
+
+CONCISE_BASE_TEMPLATE: |
+  Solve the ARC task based on the examples.
+  Output concise reasoning in `<thinking>` of 5 or less steps to arrive at the answer and output the final test grid (JSON list of lists, e.g., [[1,0]]) in `<answer>`. Verify consistency.
+  {task_prompt_section}
+
+
 # --- Google Generative AI Settings ---
 google_settings:
   # Environment variable holding the Google API Key
@@ -71,7 +78,7 @@ openrouter_settings:
   app_name: "arc-grpo-trainer" # Your project's name
   # Optional: Generation parameters (names might differ slightly from Google)
   generation_config:
-     max_tokens: 100000 # Corresponds to max_output_tokens for Google
+     max_tokens: 4000 # Corresponds to max_output_tokens for Google
      temperature: 0.3
      # top_p: 1.0
      # frequency_penalty: 0.0
@@ -83,4 +90,6 @@ baseline_models:
   default_model: "Qwen/Qwen2.5-Coder-0.5B-Instruct" # Baseline model prior to SFT/DPO/GRPO
   max_tokens: 4000 # Max tokens for the baseline model
   limit: None
+  eval_steps: 50
+  train_epochs: 100
   

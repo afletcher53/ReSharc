@@ -39,7 +39,7 @@ fi
 echo "Python 3 found."
 
 # --- Check Python Script Existence ---
-SCRIPT_PATH="./scripts/sft_model.py"
+SCRIPT_PATH="./scripts/sft_model_1.py"
 if [ ! -f "$SCRIPT_PATH" ]; then
     echo "Error: Python script not found at $SCRIPT_PATH"
     exit 1
@@ -51,15 +51,8 @@ echo "--- Hugging Face Credentials Check ---"
 
 export HUGGING_FACE_HUB_TOKEN="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"
 
-# Check for the environment variable
 if [ -n "$HUGGING_FACE_HUB_TOKEN" ]; then
-    # WARNING: Uncommenting the next line will print your token to the logs.
-    # Be cautious about log visibility and security.
-    # echo "HUGGING_FACE_HUB_TOKEN environment variable is SET."
-    # Safer alternative: Just confirm it's set without printing the value
     echo "HUGGING_FACE_HUB_TOKEN environment variable is SET."
-    # Optionally, print first few characters for identification without full exposure:
-    # echo "HUGGING_FACE_HUB_TOKEN starts with: ${HUGGING_FACE_HUB_TOKEN:0:4}..."
 else
     echo "HUGGING_FACE_HUB_TOKEN environment variable is NOT SET."
 fi
@@ -72,8 +65,6 @@ else
     echo "huggingface-cli command not found. Cannot run 'whoami'."
 fi
 echo "--- End Hugging Face Credentials Check ---"
-
-
 
 
 # --- Run Experiments ---

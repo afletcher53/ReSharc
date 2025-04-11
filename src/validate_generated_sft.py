@@ -343,6 +343,7 @@ for filename in os.listdir(GENERATED_SFT_DIR):
 
         if is_match:
             current_file_stats["matches"] += 1
+
         else:
             current_file_stats["mismatches"] += 1
 

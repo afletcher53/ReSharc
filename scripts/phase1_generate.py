@@ -38,24 +38,10 @@ except ImportError:
     print("Please ensure src/arc_utils.py exists and contains the required functions.")
     sys.exit(1)
 
-# --- Base Prompt Template (keep as before) ---
-BASE_PROMPT_TEMPLATE = """You are an expert in solving Abstraction and Reasoning Corpus (ARC) problems. Analyze the provided input/output examples and determine the transformation rule. Apply this rule to the final test input grid.
 
-**Task Description:**
-The user will provide several pairs of example input grids and their corresponding output grids. They represent a hidden transformation rule. Finally, a single test input grid is provided. Your goal is to deduce the rule from the examples and apply it to the test input grid to produce the correct test output grid.
-
-**Output Format:**
-Provide your step-by-step reasoning within `<thinking>` tags. Explain how you identified the pattern and how you are applying it to the test input.
-Provide the final predicted output grid for the test input within `<answer>` tags. The grid should be formatted as a JSON list of lists, with integers representing colors. Example: [[1, 0], [0, 1]]
-
-Ensure that you check the consistency of your answer.
-
----
-**Current Task:**
-
+CONCISE_BASE_TEMPLATE = """Solve the ARC task based on the examples.
+Output concise reasoning in `<thinking>` of 5 or less steps to arrive at the answer and output the final test grid (JSON list of lists, e.g., [[1,0]]) in `<answer>`. Verify consistency.
 {task_prompt_section}
----
-Now, please solve the current task using the specified format. Remember to output the reasoning in <thinking> tags and the final grid as a JSON list of lists in <answer> tags.
 """
 
 # --- Main Execution Logic ---
@@ -160,13 +146,10 @@ if __name__ == "__main__":
             print(
                 f"Warning: Start Task ID '{start_task_id_arg}' not found in the task list. Processing all tasks from the beginning."
             )
-            # Optionally, you could exit here if the start ID *must* exist:
-            # print(f"Error: Start Task ID '{start_task_id_arg}' not found.")
-            # sys.exit(1)
+
     else:
         print("No start_task_id provided. Starting processing from the beginning.")
 
-    # Apply max_tasks limit *after* determining the starting point
     max_tasks = config.get("max_tasks_to_process")
     if max_tasks is not None and max_tasks > 0:
         print(
@@ -178,16 +161,12 @@ if __name__ == "__main__":
             f"Processing all {len(tasks_to_consider)} tasks from the determined starting point."
         )
         task_ids_to_process = tasks_to_consider
-    # <<< END MODIFIED Section 5 Logic >>>
-
     results_count = 0
     total_prompt_tokens = 0
     total_completion_tokens = 0
 
     try:
-        # Use 'a' mode to append to the file, which is good for resuming
         with open(output_file, "a", encoding="utf-8") as f_out:
-            # Iterate through the *filtered* list of tasks
             for task_id in task_ids_to_process:
                 task_data = arc_tasks[task_id]
 
@@ -195,15 +174,12 @@ if __name__ == "__main__":
                     print(f"Skipping Task ID {task_id}: No test cases found.")
                     continue
 
-                test_case_index = (
-                    0  # Assuming only one test case per task in this structure
-                )
+                test_case_index = 0
                 task_prompt_section = create_task_prompt_section(task_data)
-                full_prompt = BASE_PROMPT_TEMPLATE.format(
+                full_prompt = CONCISE_BASE_TEMPLATE.format(
                     task_prompt_section=task_prompt_section
                 )
 
-                # Iterate through the configured models
                 for model_name in models_to_use:
                     print(
                         f"--- Processing Task ID: {task_id} (Test Case {test_case_index}) with Model: {model_name} ({api_provider}) ---"
@@ -273,7 +249,7 @@ if __name__ == "__main__":
     if start_task_id_arg:
         print(
             f"(Processing started from task ID: {start_task_id_arg if start_task_id_arg in all_task_ids else 'beginning (start ID not found)'})"
-        )  # <<< ADDED: Confirmation message
+        )
     print(f"Successfully saved {results_count} raw generations to {output_file}")
     print(
         f"Estimated Token Usage: Prompts≈{total_prompt_tokens}, Completions≈{total_completion_tokens}"
