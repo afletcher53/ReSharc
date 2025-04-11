@@ -5,6 +5,8 @@ import re
 import sys
 from datetime import datetime
 
+import wandb
+
 from utils import run_scoring
 import tqdm
 import yaml
@@ -12,6 +14,10 @@ from transformers import AutoModelForCausalLM, AutoTokenizer
 # set huggingface cache dir to /home/ubuntu/.cache/huggingface
 
 os.environ["TRANSFORMERS_CACHE"] = "/mnt/parscratch/users/aaron/huggingface"
+
+run = wandb.init(
+    project="no_hope_no_vram",  # Replace with your project name
+)
 
 try:
     with open("config/config.yaml", "r") as f:
