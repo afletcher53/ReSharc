@@ -13,6 +13,7 @@ from transformers import AutoModelForCausalLM, DataCollatorForLanguageModeling
 from peft import LoraConfig, get_peft_model
 import wandb
 
+
 try:
     with open("config/config.yaml", "r") as f:
         config = yaml.safe_load(f)
@@ -247,8 +248,8 @@ def main():
     )
 
     config = LoraConfig(
-        r=16,
-        lora_alpha=64,
+        r=8,
+        lora_alpha=32,
         target_modules=[
             "q_proj",
             "up_proj",
@@ -302,4 +303,5 @@ def main():
     trainer.train()
 
 
-main()
+if __name__ == "__main__":
+    main()
