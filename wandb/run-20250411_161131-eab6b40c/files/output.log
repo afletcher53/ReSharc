@@ -1,0 +1,37 @@
+--- GPU Memory before Dataset load ---
+Device: NVIDIA GeForce RTX 4070 Ti SUPER
+  Allocated: 0.00 MB
+  Reserved (Cached): 0.00 MB
+  Total: 16376.00 MB
+  Free: 14707.31 MB
+  Used (Total - Free): 1668.69 MB
+--- GPU Memory after Dataset load ---
+Device: NVIDIA GeForce RTX 4070 Ti SUPER
+  Allocated: 0.00 MB
+  Reserved (Cached): 0.00 MB
+  Total: 16376.00 MB
+  Free: 14707.31 MB
+  Used (Total - Free): 1668.69 MB
+trainable params: 540,672 || all params: 136,719,232 || trainable%: 0.3955
+461.463424
+Map: 100%|███████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 31/31 [00:00<00:00, 326.41 examples/s]
+Map: 100%|███████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 11/11 [00:00<00:00, 418.48 examples/s]
+/home/aaron/anaconda3/envs/dolphin/lib/python3.11/site-packages/auto_gptq/nn_modules/triton_utils/kernels.py:410: FutureWarning: `torch.cuda.amp.custom_fwd(args...)` is deprecated. Please use `torch.amp.custom_fwd(args..., device_type='cuda')` instead.
+  @custom_fwd
+/home/aaron/anaconda3/envs/dolphin/lib/python3.11/site-packages/auto_gptq/nn_modules/triton_utils/kernels.py:418: FutureWarning: `torch.cuda.amp.custom_bwd(args...)` is deprecated. Please use `torch.amp.custom_bwd(args..., device_type='cuda')` instead.
+  @custom_bwd
+/home/aaron/anaconda3/envs/dolphin/lib/python3.11/site-packages/auto_gptq/nn_modules/triton_utils/kernels.py:461: FutureWarning: `torch.cuda.amp.custom_fwd(args...)` is deprecated. Please use `torch.amp.custom_fwd(args..., device_type='cuda')` instead.
+  @custom_fwd(cast_inputs=torch.float16)
+CUDA extension not installed.
+CUDA extension not installed.
+`low_cpu_mem_usage` was None, now default to True since model is quantized.
+/home/aaron/anaconda3/envs/dolphin/lib/python3.11/site-packages/transformers/modeling_utils.py:5006: FutureWarning: `_is_quantized_training_enabled` is going to be deprecated in transformers 4.39.0. Please use `model.hf_quantizer.is_trainable` instead
+  warnings.warn(
+`loss_type=None` was set in the config but it is unrecognised.Using the default loss: `ForCausalLMLoss`.
+Found modules on cpu/disk. Using Exllama/Exllamav2 backend requires all the modules to be on GPU. Setting `disable_exllama=True`
+[34m[1mwandb[39m[22m: [33mWARNING[39m The `run_name` is currently set to the same value as `TrainingArguments.output_dir`. If this was not intended, please specify a different run name by setting the `TrainingArguments.run_name` parameter.
+  0%|                                                                                                                                                                                                                        | 0/155 [00:00<?, ?it/s]
+
+  6%|████████████                                                                                                                                                                                                    | 9/155 [00:01<00:27,  5.25it/s]
+{'loss': 0.4985, 'grad_norm': 6.1269354820251465, 'learning_rate': 0.004709677419354839, 'epoch': 0.32}
+

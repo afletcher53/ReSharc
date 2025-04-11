@@ -80,7 +80,7 @@ openrouter_settings:
 max_threshold: 0.5 # Threshold for filtering sequences based on max length
 
 baseline_models:
-  default_model: "Qwen/Qwen2.5-Coder-0.5B-Instruct-GPTQ-Int4" # Baseline model prior to SFT/DPO/GRPO
+  default_model: "Qwen/Qwen2.5-Coder-0.5B-Instruct" # Baseline model prior to SFT/DPO/GRPO
   max_tokens: 4000 # Max tokens for the baseline model
   limit: None
   

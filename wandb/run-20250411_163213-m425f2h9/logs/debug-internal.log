@@ -1,0 +1,66 @@
+2025-04-11 16:32:13,570 INFO    StreamThr :346051 [internal.py:wandb_internal():85] W&B internal server running at pid: 346051, started at: 2025-04-11 16:32:13.569839
+2025-04-11 16:32:13,571 DEBUG   HandlerThread:346051 [handler.py:handle_request():158] handle_request: status
+2025-04-11 16:32:13,573 INFO    WriterThread:346051 [datastore.py:open_for_write():87] open: /home/aaron/Desktop/ARC_GPRO_TRAINER/wandb/run-20250411_163213-m425f2h9/run-m425f2h9.wandb
+2025-04-11 16:32:13,574 DEBUG   SenderThread:346051 [sender.py:send():391] send: header
+2025-04-11 16:32:13,574 DEBUG   SenderThread:346051 [sender.py:send():391] send: run
+2025-04-11 16:32:13,975 INFO    SenderThread:346051 [dir_watcher.py:__init__():211] watching files in: /home/aaron/Desktop/ARC_GPRO_TRAINER/wandb/run-20250411_163213-m425f2h9/files
+2025-04-11 16:32:13,975 INFO    SenderThread:346051 [sender.py:_start_run_threads():1200] run started: m425f2h9 with start time 1744385533.569705
+2025-04-11 16:32:13,985 DEBUG   HandlerThread:346051 [handler.py:handle_request():158] handle_request: run_start
+2025-04-11 16:32:13,989 DEBUG   HandlerThread:346051 [system_info.py:__init__():26] System info init
+2025-04-11 16:32:13,989 DEBUG   HandlerThread:346051 [system_info.py:__init__():41] System info init done
+2025-04-11 16:32:13,989 INFO    HandlerThread:346051 [system_monitor.py:start():194] Starting system monitor
+2025-04-11 16:32:13,990 INFO    HandlerThread:346051 [system_monitor.py:probe():214] Collecting system info
+2025-04-11 16:32:13,990 INFO    SystemMonitor:346051 [system_monitor.py:_start():158] Starting system asset monitoring threads
+2025-04-11 16:32:13,991 INFO    SystemMonitor:346051 [interfaces.py:start():188] Started cpu monitoring
+2025-04-11 16:32:13,992 INFO    SystemMonitor:346051 [interfaces.py:start():188] Started disk monitoring
+2025-04-11 16:32:13,993 INFO    SystemMonitor:346051 [interfaces.py:start():188] Started gpu monitoring
+2025-04-11 16:32:13,994 INFO    SystemMonitor:346051 [interfaces.py:start():188] Started memory monitoring
+2025-04-11 16:32:13,995 INFO    SystemMonitor:346051 [interfaces.py:start():188] Started network monitoring
+2025-04-11 16:32:14,006 DEBUG   HandlerThread:346051 [system_info.py:probe():152] Probing system
+2025-04-11 16:32:14,007 DEBUG   HandlerThread:346051 [system_info.py:_probe_git():137] Probing git
+2025-04-11 16:32:14,012 DEBUG   HandlerThread:346051 [system_info.py:_probe_git():145] Probing git done
+2025-04-11 16:32:14,012 DEBUG   HandlerThread:346051 [system_info.py:probe():200] Probing system done
+2025-04-11 16:32:14,012 DEBUG   HandlerThread:346051 [system_monitor.py:probe():223] {'os': 'Linux-6.14.0-15-generic-x86_64-with-glibc2.41', 'python': '3.11.8', 'heartbeatAt': '2025-04-11T15:32:14.006104', 'startedAt': '2025-04-11T15:32:13.565962', 'docker': None, 'cuda': None, 'args': (), 'state': 'running', 'program': '/home/aaron/Desktop/ARC_GPRO_TRAINER/scripts/sft_model.py', 'codePathLocal': 'scripts/sft_model.py', 'codePath': 'scripts/sft_model.py', 'git': {'remote': 'https://github.com/afletcher53/ReSharc.git', 'commit': '5c5f5f425770be9a8adc83ba2a30a9059522271a'}, 'email': 'afletcher53@gmail.com', 'root': '/home/aaron/Desktop/ARC_GPRO_TRAINER', 'host': 'aaron', 'username': 'aaron', 'executable': '/home/aaron/anaconda3/envs/dolphin/bin/python', 'cpu_count': 8, 'cpu_count_logical': 16, 'cpu_freq': {'current': 4192.332625, 'min': 2992.0, 'max': 5582.0}, 'cpu_freq_per_core': [{'current': 4237.622, 'min': 2992.0, 'max': 5582.0}, {'current': 4280.593, 'min': 2992.0, 'max': 5582.0}, {'current': 4241.634, 'min': 2992.0, 'max': 5582.0}, {'current': 4230.39, 'min': 2992.0, 'max': 5582.0}, {'current': 4278.81, 'min': 2992.0, 'max': 5582.0}, {'current': 4277.402, 'min': 2992.0, 'max': 5582.0}, {'current': 4275.625, 'min': 2992.0, 'max': 5582.0}, {'current': 4239.673, 'min': 2992.0, 'max': 5582.0}, {'current': 2992.0, 'min': 2992.0, 'max': 5582.0}, {'current': 4276.611, 'min': 2992.0, 'max': 5582.0}, {'current': 4277.407, 'min': 2992.0, 'max': 5582.0}, {'current': 4269.76, 'min': 2992.0, 'max': 5582.0}, {'current': 4274.233, 'min': 2992.0, 'max': 5582.0}, {'current': 4272.466, 'min': 2992.0, 'max': 5582.0}, {'current': 4275.425, 'min': 2992.0, 'max': 5582.0}, {'current': 4222.802, 'min': 2992.0, 'max': 5582.0}], 'disk': {'/': {'total': 912.6906433105469, 'used': 865.6084175109863}}, 'gpu': 'NVIDIA GeForce RTX 4070 Ti SUPER', 'gpu_count': 1, 'gpu_devices': [{'name': 'NVIDIA GeForce RTX 4070 Ti SUPER', 'memory_total': 17171480576}], 'memory': {'total': 59.40290451049805}}
+2025-04-11 16:32:14,012 INFO    HandlerThread:346051 [system_monitor.py:probe():224] Finished collecting system info
+2025-04-11 16:32:14,012 INFO    HandlerThread:346051 [system_monitor.py:probe():227] Publishing system info
+2025-04-11 16:32:14,012 DEBUG   HandlerThread:346051 [system_info.py:_save_conda():209] Saving list of conda packages installed into the current environment
+2025-04-11 16:32:14,976 INFO    Thread-17 :346051 [dir_watcher.py:_on_file_created():271] file/dir created: /home/aaron/Desktop/ARC_GPRO_TRAINER/wandb/run-20250411_163213-m425f2h9/files/conda-environment.yaml
+2025-04-11 16:32:16,975 INFO    Thread-17 :346051 [dir_watcher.py:_on_file_modified():288] file/dir modified: /home/aaron/Desktop/ARC_GPRO_TRAINER/wandb/run-20250411_163213-m425f2h9/files/conda-environment.yaml
+2025-04-11 16:32:17,130 DEBUG   HandlerThread:346051 [system_info.py:_save_conda():224] Saving conda packages done
+2025-04-11 16:32:17,131 INFO    HandlerThread:346051 [system_monitor.py:probe():229] Finished publishing system info
+2025-04-11 16:32:17,135 DEBUG   SenderThread:346051 [sender.py:send():391] send: files
+2025-04-11 16:32:17,135 INFO    SenderThread:346051 [sender.py:_save_file():1466] saving file wandb-metadata.json with policy now
+2025-04-11 16:32:17,423 DEBUG   HandlerThread:346051 [handler.py:handle_request():158] handle_request: python_packages
+2025-04-11 16:32:17,423 DEBUG   SenderThread:346051 [sender.py:send_request():418] send_request: python_packages
+2025-04-11 16:32:17,425 DEBUG   HandlerThread:346051 [handler.py:handle_request():158] handle_request: stop_status
+2025-04-11 16:32:17,425 DEBUG   SenderThread:346051 [sender.py:send_request():418] send_request: stop_status
+2025-04-11 16:32:17,427 DEBUG   HandlerThread:346051 [handler.py:handle_request():158] handle_request: internal_messages
+2025-04-11 16:32:17,698 DEBUG   SenderThread:346051 [sender.py:send():391] send: telemetry
+2025-04-11 16:32:17,744 INFO    wandb-upload_0:346051 [upload_job.py:push():130] Uploaded file /tmp/tmpybs1scxwwandb/am4iex1y-wandb-metadata.json
+2025-04-11 16:32:17,976 INFO    Thread-17 :346051 [dir_watcher.py:_on_file_created():271] file/dir created: /home/aaron/Desktop/ARC_GPRO_TRAINER/wandb/run-20250411_163213-m425f2h9/files/output.log
+2025-04-11 16:32:17,976 INFO    Thread-17 :346051 [dir_watcher.py:_on_file_created():271] file/dir created: /home/aaron/Desktop/ARC_GPRO_TRAINER/wandb/run-20250411_163213-m425f2h9/files/wandb-metadata.json
+2025-04-11 16:32:17,976 INFO    Thread-17 :346051 [dir_watcher.py:_on_file_created():271] file/dir created: /home/aaron/Desktop/ARC_GPRO_TRAINER/wandb/run-20250411_163213-m425f2h9/files/requirements.txt
+2025-04-11 16:32:18,959 DEBUG   HandlerThread:346051 [handler.py:handle_request():158] handle_request: status_report
+2025-04-11 16:32:18,962 DEBUG   SenderThread:346051 [sender.py:send():391] send: config
+2025-04-11 16:32:18,963 DEBUG   SenderThread:346051 [sender.py:send():391] send: telemetry
+2025-04-11 16:32:18,964 DEBUG   SenderThread:346051 [sender.py:send():391] send: metric
+2025-04-11 16:32:18,964 DEBUG   SenderThread:346051 [sender.py:send():391] send: telemetry
+2025-04-11 16:32:18,964 DEBUG   SenderThread:346051 [sender.py:send():391] send: metric
+2025-04-11 16:32:18,964 WARNING SenderThread:346051 [sender.py:send_metric():1417] Seen metric with glob (shouldn't happen)
+2025-04-11 16:32:18,964 DEBUG   SenderThread:346051 [sender.py:send():391] send: telemetry
+2025-04-11 16:32:18,965 DEBUG   SenderThread:346051 [sender.py:send():391] send: telemetry
+2025-04-11 16:32:18,965 DEBUG   SenderThread:346051 [sender.py:send():391] send: config
+2025-04-11 16:32:19,976 INFO    Thread-17 :346051 [dir_watcher.py:_on_file_modified():288] file/dir modified: /home/aaron/Desktop/ARC_GPRO_TRAINER/wandb/run-20250411_163213-m425f2h9/files/output.log
+2025-04-11 16:32:20,114 DEBUG   HandlerThread:346051 [handler.py:handle_request():158] handle_request: partial_history
+2025-04-11 16:32:20,115 DEBUG   SenderThread:346051 [sender.py:send():391] send: metric
+2025-04-11 16:32:20,116 DEBUG   SenderThread:346051 [sender.py:send():391] send: metric
+2025-04-11 16:32:20,116 DEBUG   SenderThread:346051 [sender.py:send():391] send: metric
+2025-04-11 16:32:20,116 DEBUG   SenderThread:346051 [sender.py:send():391] send: metric
+2025-04-11 16:32:20,116 DEBUG   SenderThread:346051 [sender.py:send():391] send: history
+2025-04-11 16:32:20,116 DEBUG   SenderThread:346051 [sender.py:send_request():418] send_request: summary_record
+2025-04-11 16:32:20,116 INFO    SenderThread:346051 [sender.py:_save_file():1466] saving file wandb-summary.json with policy end
+2025-04-11 16:32:20,932 DEBUG   HandlerThread:346051 [handler.py:handle_request():158] handle_request: partial_history
+2025-04-11 16:32:20,933 DEBUG   SenderThread:346051 [sender.py:send():391] send: history
+2025-04-11 16:32:20,933 DEBUG   SenderThread:346051 [sender.py:send_request():418] send_request: summary_record
+2025-04-11 16:32:20,933 INFO    SenderThread:346051 [sender.py:_save_file():1466] saving file wandb-summary.json with policy end
+2025-04-11 16:32:20,977 INFO    Thread-17 :346051 [dir_watcher.py:_on_file_created():271] file/dir created: /home/aaron/Desktop/ARC_GPRO_TRAINER/wandb/run-20250411_163213-m425f2h9/files/wandb-summary.json

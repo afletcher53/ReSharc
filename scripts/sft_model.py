@@ -3,6 +3,7 @@ import sys
 from pathlib import Path
 
 
+import torch
 import yaml
 from sklearn.model_selection import train_test_split
 from transformers import AutoTokenizer
@@ -12,7 +13,7 @@ from transformers import Trainer, TrainingArguments
 from transformers import AutoModelForCausalLM, DataCollatorForLanguageModeling
 from peft import LoraConfig, get_peft_model
 import wandb
-
+import pynvml
 
 try:
     with open("config/config.yaml", "r") as f:
@@ -31,13 +32,35 @@ run = wandb.init(
 )
 
 
+def print_gpu_memory_usage():
+    if torch.cuda.is_available():
+        print(f"Device: {torch.cuda.get_device_name(0)}")
+        allocated = torch.cuda.memory_allocated(0) / 1024**2
+        reserved = torch.cuda.memory_reserved(0) / 1024**2  # aka cached
+        print(f"  Allocated: {allocated:.2f} MB")
+        print(f"  Reserved (Cached): {reserved:.2f} MB")
+
+        try:
+            pynvml.nvmlInit()
+            handle = pynvml.nvmlDeviceGetHandleByIndex(0)
+            info = pynvml.nvmlDeviceGetMemoryInfo(handle)
+            print(f"  Total: {info.total / 1024**2:.2f} MB")
+            print(f"  Free: {info.free / 1024**2:.2f} MB")
+            print(f"  Used (Total - Free): {(info.total - info.free) / 1024**2:.2f} MB")
+            pynvml.nvmlShutdown()
+        except Exception as e:
+            print(f"  pynvml not available or failed: {e}")
+    else:
+        print("CUDA not available.")
+
+
 def grid_to_str(grid: list[list[int]]):
     """Converts a grid to a string representation."""
     grid_strs = []
     for row in grid:
-        row_str = ", ".join([str(x) for x in row])
-        grid_strs.append("[" + row_str + "]")
-    return "[" + ", ".join(grid_strs) + "]"
+        row_str = " ".join([str(x) for x in row])
+        grid_strs.append(row_str)
+    return "|" + "|".join(grid_strs) + "|"
 
 
 def data_instance_to_chat_input(challenge_data_instance, tokenizer):
@@ -124,17 +147,57 @@ def load_cot_responses(tokenizer, cofig):
 
     from collections import defaultdict
 
+    def find_last_list_of_lists(text: str):
+        last_checked_end = len(text)
+        while True:
+            end_index = text.rfind("]", 0, last_checked_end)
+            if end_index == -1:
+                return None
+            balance = 0
+            start_index = -1
+            for i in range(end_index, -1, -1):
+                char = text[i]
+                if char == "]":
+                    balance += 1
+                elif char == "[":
+                    balance -= 1
+                    if balance == 0:
+                        start_index = i
+                        break
+            if start_index != -1:
+                potential_json_str = text[start_index : end_index + 1]
+                try:
+                    parsed_data = json.loads(potential_json_str)
+                    if (
+                        isinstance(parsed_data, list)
+                        and parsed_data
+                        and all(isinstance(item, list) for item in parsed_data)
+                    ):
+                        return parsed_data
+                except json.JSONDecodeError:
+                    pass
+            last_checked_end = end_index
+
     all_data = defaultdict(list)
     for task_id in included_task_ids:
         for d in cot_data:
             if d["task_id"] == task_id:
                 if isinstance(d["raw_response"], list):
-                    print(len(d["raw_response"][0]))
                     if len(d["raw_response"][0]) < max_len_threshold:
-                        all_data[task_id].append(d["raw_response"][0])
+                        grid = find_last_list_of_lists(d["raw_response"][0])
+                        # remove spaces and new lines
+                        # grid = [[int(x) for x in row if x != ""] for row in grid]
+                        # grid_str = grid_to_str(grid)
+                        if grid is not None:
+                            # grid = [[int(x) for x in row if x != ""] for row in grid]
+
+                            all_data[task_id].append(grid_to_str(grid))
+
                 else:
                     if len(d["raw_response"]) < max_len_threshold:
-                        all_data[task_id].append(d["raw_response"])
+                        grid = find_last_list_of_lists(d["raw_response"])
+                        if grid is not None:
+                            all_data[task_id].append(grid_to_str(grid))
 
     train_ids, val_ids = train_test_split(
         list(all_data.keys()), test_size=0.2, random_state=42
@@ -221,9 +284,6 @@ def load_cot_responses(tokenizer, cofig):
 
         tokenized["labels"] = labels
 
-        print("input id length", len(tokenized["input_ids"]))
-        # limit the length of the input to 1024 tokens
-
         return tokenized
 
     tokenized_map_train_ds = train_ds.map(tokenize_and_mask)
@@ -241,18 +301,29 @@ def main():
     tokenizer.padding_side = "left"
     tokenizer.pad_token = tokenizer.eos_token
 
+    print("--- GPU Memory before Dataset load ---")
+    print_gpu_memory_usage()
+
     (train_ds, val_ds) = load_cot_responses(tokenizer, config)
+
+    print("--- GPU Memory after Dataset load ---")
+    print_gpu_memory_usage()
 
     model = AutoModelForCausalLM.from_pretrained(
         config.get("baseline_models")["default_model"]
     )
 
+    print(model)
+
     config = LoraConfig(
-        r=8,
-        lora_alpha=32,
+        r=4,
+        lora_alpha=8,
         target_modules=[
             "q_proj",
             "v_proj",
+            "down_proj",
+            "gate_proj",
+            "up_proj",
         ],
         lora_dropout=0.1,
         bias="none",
@@ -262,6 +333,8 @@ def main():
     peft_model = get_peft_model(model, config)
     peft_model.print_trainable_parameters()
     peft_model.config.gradient_checkpointing = True
+
+    print(peft_model.get_memory_footprint() / 1e6)
 
     batch_size = 1
 

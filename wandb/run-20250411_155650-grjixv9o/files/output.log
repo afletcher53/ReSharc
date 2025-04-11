@@ -1,0 +1,168 @@
+--- GPU Memory before Dataset load ---
+Device: NVIDIA GeForce RTX 4070 Ti SUPER
+  Allocated: 0.00 MB
+  Reserved (Cached): 0.00 MB
+2289
+1602
+5392
+2299
+4204
+4062
+4491
+3584
+3720
+5887
+4719
+4345
+3046
+3514
+5672
+4048
+2375
+2174
+2722
+4231
+4412
+1295
+2706
+2886
+4872
+5551
+2289
+2258
+2425
+3704
+4530
+4296
+4016
+3944
+5507
+6811
+1997
+1664
+2172
+3728
+2615
+782
+1720
+2537
+3116
+3030
+1536
+2008
+2234
+5926
+input id length 2804
+input id length 6598
+input id length 2325
+input id length 2852
+input id length 4564
+input id length 5774
+input id length 4981
+input id length 3612
+input id length 3693
+input id length 6765
+input id length 2340
+input id length 2913
+input id length 1961
+input id length 4748
+input id length 3024
+input id length 2466
+input id length 1748
+input id length 1958
+input id length 3130
+input id length 1619
+input id length 1525
+input id length 2589
+input id length 3370
+input id length 3678
+input id length 3562
+input id length 4720
+input id length 3376
+input id length 3305
+input id length 3564
+input id length 13182
+input id length 12772
+input id length 12304
+input id length 13844
+input id length 13159
+input id length 13068
+input id length 2253
+input id length 4122
+input id length 1751
+input id length 1497
+input id length 3853
+input id length 1876
+input id length 2448
+input id length 2044
+input id length 1813
+input id length 6268
+input id length 6325
+input id length 1401
+input id length 1740
+input id length 11606
+input id length 11576
+input id length 11582
+input id length 11302
+input id length 11447
+input id length 12051
+input id length 1912
+input id length 2532
+input id length 2145
+input id length 2229
+input id length 1723
+input id length 1754
+input id length 1348
+input id length 1263
+input id length 1372
+input id length 2094
+input id length 2424
+input id length 2617
+input id length 3514
+input id length 2204
+input id length 3417
+input id length 2878
+input id length 2372
+input id length 3181
+input id length 3087
+input id length 3149
+input id length 3845
+input id length 2277
+input id length 2869
+input id length 2449
+input id length 2969
+input id length 3266
+input id length 3123
+input id length 2207
+input id length 7919
+input id length 8811
+input id length 7852
+input id length 7946
+input id length 2464
+input id length 2428
+input id length 1536
+input id length 1457
+input id length 1615
+input id length 1200
+input id length 1583
+input id length 2301
+input id length 3659
+input id length 2734
+input id length 2167
+input id length 2155
+input id length 2631
+input id length 2394
+input id length 2363
+input id length 3373
+input id length 2855
+input id length 2598
+input id length 2889
+input id length 2267
+input id length 2194
+input id length 2789
+input id length 3638
+--- GPU Memory before Dataset load ---
+Device: NVIDIA GeForce RTX 4070 Ti SUPER
+  Allocated: 0.00 MB
+  Reserved (Cached): 0.00 MB
+Map: 100%|███████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 55/55 [00:00<00:00, 169.62 examples/s]
