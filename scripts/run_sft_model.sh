@@ -39,7 +39,7 @@ fi
 echo "Python 3 found."
 
 # --- Check Python Script Existence ---
-SCRIPT_PATH="./scripts/sft_model_1.py"
+SCRIPT_PATH="./src/sft_model.py"
 if [ ! -f "$SCRIPT_PATH" ]; then
     echo "Error: Python script not found at $SCRIPT_PATH"
     exit 1

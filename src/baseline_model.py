@@ -122,7 +122,7 @@ def data_instance_to_chat_input(challenge_data_instance, config):
     test_input_as_string = grid_to_str(challenge_data_instance["test"][0]["input"])
     instance_string += f"\nTest input: {test_input_as_string}"
 
-    full_prompt = config["BASE_PROMPT_TEMPLATE"].format(
+    full_prompt = config["CONCISE_BASE_TEMPLATE"].format(
         task_prompt_section=instance_string
     )
 
@@ -216,8 +216,9 @@ def generate_task_prompt_sections(testing_challenges, config):
     return task_prompt_sections
 
 
-def baseline(testing_challenges, config, batch_size=2):
+def baseline(testing_challenges, config):
     test_ids = list(testing_challenges.keys())
+    batch_size = config["baseline_models"]["batch_size"]
     save_config(config)
 
     model, tokenizer = load_model(config)

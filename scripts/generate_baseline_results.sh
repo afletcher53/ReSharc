@@ -38,7 +38,6 @@ if ! command -v python3 &> /dev/null; then
 fi
 echo "Python 3 found."
 
-# --- Check Python Script Existence ---
 SCRIPT_PATH="./src/baseline_model.py"
 if [ ! -f "$SCRIPT_PATH" ]; then
     echo "Error: Python script not found at $SCRIPT_PATH"
@@ -46,25 +45,17 @@ if [ ! -f "$SCRIPT_PATH" ]; then
 fi
 echo "Python script found at $SCRIPT_PATH"
 
-# --- Hugging Face Credentials Check ---
 echo "--- Hugging Face Credentials Check ---"
 
 export HUGGING_FACE_HUB_TOKEN="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"
 
 # Check for the environment variable
 if [ -n "$HUGGING_FACE_HUB_TOKEN" ]; then
-    # WARNING: Uncommenting the next line will print your token to the logs.
-    # Be cautious about log visibility and security.
-    # echo "HUGGING_FACE_HUB_TOKEN environment variable is SET."
-    # Safer alternative: Just confirm it's set without printing the value
     echo "HUGGING_FACE_HUB_TOKEN environment variable is SET."
-    # Optionally, print first few characters for identification without full exposure:
-    # echo "HUGGING_FACE_HUB_TOKEN starts with: ${HUGGING_FACE_HUB_TOKEN:0:4}..."
 else
     echo "HUGGING_FACE_HUB_TOKEN environment variable is NOT SET."
 fi
 
-# Attempt to check login status using the CLI tool
 echo "Running 'huggingface-cli whoami' to check authentication status:"
 if command -v huggingface-cli &> /dev/null; then
     huggingface-cli whoami
@@ -75,8 +66,8 @@ echo "--- End Hugging Face Credentials Check ---"
 
 
 # --- Define Models ---
-# models=("Llama-3.2-3B-Instruct" "meta-llama/Llama-3.1-8B-Instruct" "meta-llama/Llama-3.3-70B-Instruct" "Qwen/Qwen2.5-7B-Instruct" "Qwen/Qwen2.5-14B-Instruct" "Qwen/Qwen2.5-Coder-7B-Instruct" "Qwen/Qwen2.5-Coder-14B-Instruct")
-models=("meta-llama/Llama-3.3-70B-Instruct" "Qwen/Qwen2.5-7B-Instruct" "Qwen/Qwen2.5-14B-Instruct" "Qwen/Qwen2.5-Coder-7B-Instruct" "Qwen/Qwen2.5-Coder-14B-Instruct")
+models=("Qwen/Qwen2.5-Coder-0.5B-Instruct" "Llama-3.2-3B-Instruct" "meta-llama/Llama-3.1-8B-Instruct" "meta-llama/Llama-3.3-70B-Instruct" "Qwen/Qwen2.5-7B-Instruct" "Qwen/Qwen2.5-14B-Instruct" "Qwen/Qwen2.5-Coder-7B-Instruct" "Qwen/Qwen2.5-Coder-14B-Instruct")
+# models=("meta-llama/Llama-3.3-70B-Instruct" "Qwen/Qwen2.5-7B-Instruct" "Qwen/Qwen2.5-14B-Instruct" "Qwen/Qwen2.5-Coder-7B-Instruct" "Qwen/Qwen2.5-Coder-14B-Instruct")
 
 
 # --- Run Experiments ---

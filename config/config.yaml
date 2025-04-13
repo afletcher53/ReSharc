@@ -14,7 +14,10 @@ evaluation_challenges_file: "arc-agi_evaluation_challenges.json"
 evaluation_solutions_file: "arc-agi_evaluation_solutions.json"
 
 raw_generations_output_file: "data/generated_sft/raw_generations.jsonl"
-filtered_sft_output_file: "data/filtered_sft/sft_dataset.jsonl"
+
+filtered_sft_output_file: "data/filtered_sft/arc_correct_cots.jsonl"
+summarized_output_file: "data/filtered_sft/arc_correct_cots_summarized.jsonl"
+
 max_tasks_to_process: 200 # Max tasks for either provider
 
 # Base prompt template for the ARC task
@@ -76,20 +79,21 @@ openrouter_settings:
   # See: https://openrouter.ai/docs#headers
   site_url: "http://localhost" # Or your actual site/app URL
   app_name: "arc-grpo-trainer" # Your project's name
-  # Optional: Generation parameters (names might differ slightly from Google)
   generation_config:
-     max_tokens: 4000 # Corresponds to max_output_tokens for Google
+     max_tokens: 4000
      temperature: 0.3
-     # top_p: 1.0
-     # frequency_penalty: 0.0
-     # presence_penalty: 0.0
+  summarization_model: "openrouter/optimus-alpha"
 
-max_threshold: 0.5 # Threshold for filtering sequences based on max length
+
+reasoning_sft: True
 
 baseline_models:
-  default_model: "Qwen/Qwen2.5-Coder-0.5B-Instruct" # Baseline model prior to SFT/DPO/GRPO
-  max_tokens: 4000 # Max tokens for the baseline model
+  default_model: "Qwen/Qwen2.5-Coder-0.5B-Instruct" 
+  max_tokens: 6000 
   limit: None
-  eval_steps: 50
-  train_epochs: 100
+  eval_steps: 150
+  save_steps: 150
+  train_epochs: 200
+  batch_size: 10
+
   
