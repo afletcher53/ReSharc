@@ -16,7 +16,7 @@ from transformers import AutoModelForCausalLM, AutoTokenizer
 os.environ["TRANSFORMERS_CACHE"] = "/mnt/parscratch/users/aaron/huggingface"
 
 run = wandb.init(
-    project="no_hope_no_vram",  # Replace with your project name
+    project="arc-baseline-models",  # Replace with your project name
 )
 
 try:
