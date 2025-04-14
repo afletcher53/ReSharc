@@ -66,8 +66,8 @@ echo "--- End Hugging Face Credentials Check ---"
 
 
 # --- Define Models ---
-models=("Qwen/Qwen2.5-Coder-0.5B-Instruct" "Llama-3.2-3B-Instruct" "meta-llama/Llama-3.1-8B-Instruct" "meta-llama/Llama-3.3-70B-Instruct" "Qwen/Qwen2.5-7B-Instruct" "Qwen/Qwen2.5-14B-Instruct" "Qwen/Qwen2.5-Coder-7B-Instruct" "Qwen/Qwen2.5-Coder-14B-Instruct")
-# models=("meta-llama/Llama-3.3-70B-Instruct" "Qwen/Qwen2.5-7B-Instruct" "Qwen/Qwen2.5-14B-Instruct" "Qwen/Qwen2.5-Coder-7B-Instruct" "Qwen/Qwen2.5-Coder-14B-Instruct")
+models=("meta-llama/Llama-3.2-3B-Instruct" "meta-llama/Llama-3.1-8B-Instruct" "meta-llama/Llama-3.3-70B-Instruct" "Qwen/Qwen2.5-7B-Instruct" "Qwen/Qwen2.5-14B-Instruct" "Qwen/Qwen2.5-Coder-7B-Instruct" "Qwen/Qwen2.5-Coder-14B-Instruct")
+# models=(""Qwen/Qwen2.5-Coder-0.5B-Instruct" "meta-llama/Llama-3.3-70B-Instruct" "Qwen/Qwen2.5-7B-Instruct" "Qwen/Qwen2.5-14B-Instruct" "Qwen/Qwen2.5-Coder-7B-Instruct" "Qwen/Qwen2.5-Coder-14B-Instruct")
 
 
 # --- Run Experiments ---
