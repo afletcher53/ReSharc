@@ -80,6 +80,7 @@ A prediction grid is defined as $P$, and the ground truth solution grid as $S$. 
     0 & \text{otherwise}
     \end{cases}
     $$
+
 ## Results Highlights
 
 * **OpenAI o4 Mini (Medium) with CoT + Repeating:** Achieved an EM score of 0.180 (a 10.4% relative increase over baseline CoT's 0.163). GDM: 0.180, PA: 0.172, FPA: 0.169.
