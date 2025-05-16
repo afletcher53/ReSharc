@@ -1,7 +1,7 @@
 # config/config.yaml
 
 # Choose the API provider: "google" or "openrouter"
-api_provider: "openrouter"  # <--- CHANGE THIS TO "openrouter" TO USE OPENROUTER
+api_provider: "openrouter" 
 
 # --- Generic Settings ---
 arc_data_dir: "data/arc/"
@@ -18,7 +18,7 @@ raw_generations_output_file: "data/generated_sft/raw_generations.jsonl"
 filtered_sft_output_file: "data/filtered_sft/arc_correct_cots.jsonl"
 summarized_output_file: "data/filtered_sft/arc_correct_cots_summarized.jsonl"
 
-max_tasks_to_process: 200 # Max tasks for either provider
+max_tasks_to_process: 400 # Max tasks for either provider
 
 # Base prompt template for the ARC task
 BASE_PROMPT_TEMPLATE: |
@@ -27,19 +27,38 @@ BASE_PROMPT_TEMPLATE: |
   **Task Description:**
   The user will provide several pairs of example input grids and their corresponding output grids. They represent a hidden transformation rule. Finally, a single test input grid is provided. Your goal is to deduce the rule from the examples and apply it to the test input grid to produce the correct test output grid.
 
-  **Output Format:**
-  Provide your step-by-step reasoning within `<thinking>` tags. Explain how you identified the pattern and how you are applying it to the test input.
-  Provide the final predicted output grid for the test input within `<answer>` tags. The grid should be formatted as a list of lists, with integers representing colors. Example: [[1, 0], [0, 1]]
-
-  Ensure that you check the consistency of your answer.
-
-  ---
-  **Current Task:**
+  Output concise reasoning in `<thinking>` of 5 or less steps to arrive at the answer and output the final test grid (JSON list of lists, e.g., [[1,0]]) in `<answer>`. Verify consistency.
 
   {task_prompt_section}
 
-  ---
-  Now, please solve the current task using the specified format. Remember to output the reasoning in <thinking> tags and the final grid as a list of lists in <answer> tags.
+
+REREAD_PROMPT_TEMPLATE: |
+  You are an expert in solving Abstraction and Reasoning Corpus (ARC) problems. Analyze the provided input/output examples and determine the transformation rule. Apply this rule to the final test input grid.
+
+  **Task Description:**
+  The user will provide several pairs of example input grids and their corresponding output grids. They represent a hidden transformation rule. Finally, a single test input grid is provided. Your goal is to deduce the rule from the examples and apply it to the test input grid to produce the correct test output grid.
+
+  Output concise reasoning in `<thinking>` of 5 or less steps to arrive at the answer and output the final test grid (JSON list of lists, e.g., [[1,0]]) in `<answer>`. Verify consistency.
+
+  {task_prompt_section}
+
+  Read the question again:
+
+  {task_prompt_section} 
+
+REFLECTION_PROMPT_TEMPLATE: |
+  You are an expert in solving Abstraction and Reasoning Corpus (ARC) problems. Analyze the provided input/output examples and determine the transformation rule. Apply this rule to the final test input grid.
+
+  **Task Description:**
+  The user will provide several pairs of example input grids and their corresponding output grids. They represent a hidden transformation rule. Finally, a single test input grid is provided. Your goal is to deduce the rule from the examples and apply it to the test input grid to produce the correct test output grid.
+
+  Output concise reasoning in `<thinking>` of 5 or less steps. Reflect on the `<thinking>` tokens in `<reflection>`. Then output the final test grid (JSON list of lists, e.g., [[1,0]]) in `<answer>`. Verify consistency.
+
+  {task_prompt_section}
+
+
+
+
 
 
 CONCISE_BASE_TEMPLATE: |
@@ -48,52 +67,27 @@ CONCISE_BASE_TEMPLATE: |
   {task_prompt_section}
 
 
-# --- Google Generative AI Settings ---
-google_settings:
-  # Environment variable holding the Google API Key
-  api_key_env_var: "GOOGLE_API_KEY"
-  # List of Google models to use if api_provider is "google"
-  teacher_models:
-    - "openai/o3-mini-high"
-    # - "gemini-1.0-pro"
-  # Optional Generation Configuration
-  # generation_config:
-  #   temperature: 0.7
-  #   max_output_tokens: 2048
-  # Optional Safety Settings
-  # safety_settings:
-  #   HARM_CATEGORY_HARASSMENT: "BLOCK_MEDIUM_AND_ABOVE"
-  #   # ... other categories
-
 # --- OpenRouter Settings ---
 openrouter_settings:
-  # Environment variable holding the OpenRouter API Key
   api_key_env_var: "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"
-  # List of OpenRouter models to use if api_provider is "openrouter"
-  # Find models at: https://openrouter.ai/models
   teacher_models:
-    # - "google/gemini-flash-1.5" # Example OpenRouter identifier
-    - "openrouter/optimus-alpha"
-    # - "mistralai/mistral-7b-instruct"
-  # Optional: Recommended headers for OpenRouter
-  # See: https://openrouter.ai/docs#headers
+    - "google/gemini-2.5-flash-preview:thinking"
   site_url: "http://localhost" # Or your actual site/app URL
   app_name: "arc-grpo-trainer" # Your project's name
-  generation_config:
-     max_tokens: 4000
-     temperature: 0.3
   summarization_model: "openrouter/optimus-alpha"
 
 
-reasoning_sft: True
 
-baseline_models:
-  default_model: "Qwen/Qwen2.5-Coder-0.5B-Instruct" 
-  max_tokens: 6000 
-  limit: None
-  eval_steps: 150
-  save_steps: 150
-  train_epochs: 200
-  batch_size: 10
-
-  
+generation_config:
+    # CRITICAL: Increase max_tokens to allow for longer completions.
+    # ARC reasoning can be verbose. Try 4096 or 8192.
+    # Be mindful of the model's maximum context window (prompt + completion) and cost.
+    max_tokens: 4096
+    
+openai_batch_settings:
+  api_key_env_var: "OPENAI_API_KEY"
+  batch_model_id: "o4-mini-2025-04-16" # The model to use for the batch
+  batch_completion_window: "24h" # How long OpenAI has to complete the batch
+  batch_input_file_prefix: "data/batches/input/batch_input" # Prefix for generated input files
+  batch_output_dir: "data/batches/output/" # Directory to store downloaded batch results
+  batch_status_poll_interval: 30 # Seconds to wait between polling batch status

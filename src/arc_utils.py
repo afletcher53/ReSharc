@@ -45,8 +45,8 @@ def create_task_prompt_section(task_data):
     if task_data.get("train"):
         for i, pair in enumerate(task_data["train"]):
             if "input" in pair and "output" in pair:
-                prompt_section += f"E.g. {i + 1} Input:\n{grid_to_str(pair['input'])}\n"
-                prompt_section += f"E.g. {i + 1} Output:\n{format_grid_for_prompt(pair['output'])}\n\n"
+                prompt_section += f"E.g. {i + 1} Input:\n{pair['input']}\n"
+                prompt_section += f"Output:\n{pair['output']}\n\n"
             else:
                 prompt_section += f"E.g. {i + 1}: [Malformed train pair data]\n\n"
 
@@ -56,9 +56,7 @@ def create_task_prompt_section(task_data):
     ):  # Check if list exists and is not empty
         if "input" in task_data["test"][0]:
             test_input_grid = task_data["test"][0]["input"]
-            prompt_section += (
-                f"Test Input:\n{format_grid_for_prompt(test_input_grid)}\n"
-            )
+            prompt_section += f"Test Input:\n{test_input_grid}\n"
         else:
             prompt_section += (
                 "Test Input: [Test case exists but missing 'input' grid]\n"

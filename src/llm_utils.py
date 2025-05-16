@@ -2,16 +2,11 @@
 
 import os
 import time
-import sys
+
 from dotenv import load_dotenv
+from openai import APIStatusError
 
-# --- Google GenAI Imports ---
-import google.generativeai as genai
-from google.generativeai.types import generation_types, safety_types
 
-# --- OpenRouter Imports ---
-# Use 'openai' library configured for OpenRouter
-# pip install openai
 try:
     from openai import (
         OpenAI,
@@ -28,171 +23,6 @@ except ImportError:
 
 # Load environment variables
 load_dotenv()
-
-# ==================================================
-# Google Generative AI Functions
-# ==================================================
-
-
-def configure_google_genai(settings):
-    """Configures the Google Generative AI client using an API key from env."""
-    api_key_env_var = settings.get("api_key_env_var", "GOOGLE_API_KEY")
-    api_key = os.getenv(api_key_env_var)
-
-    if not api_key:
-        print(
-            f"Error: Google API Key environment variable '{api_key_env_var}' not found."
-        )
-        return False  # Indicate failure
-
-    try:
-        genai.configure(api_key=api_key)
-        print("Google Generative AI client configured successfully.")
-        return True  # Indicate success
-    except Exception as e:
-        print(f"Error configuring Google Generative AI client: {e}")
-        return False
-
-
-def call_google_genai_llm(model_name, prompt, settings, max_retries=2, delay=5):
-    """
-    Calls a Google Generative AI model (Gemini) and returns content and token counts.
-
-    Args:
-        model_name (str): The name of the Google model.
-        prompt (str): The input prompt.
-        settings (dict): The google_settings dictionary from config.
-        max_retries (int): Max retry attempts.
-        delay (int): Delay between retries.
-
-    Returns:
-        tuple: (content, prompt_tokens, completion_tokens) or (None, 0, 0) on failure.
-    """
-    print(f"--- Calling Google GenAI model: {model_name} ---")
-    attempt = 0
-
-    gen_config_dict = settings.get("generation_config")
-    safety_settings_dict = settings.get("safety_settings")
-    generation_config = None
-    safety_settings = None
-
-    # --- Process Google Generation Config ---
-    if gen_config_dict:
-        try:
-            generation_config = generation_types.GenerationConfig(**gen_config_dict)
-            print(f"Using Google Generation Config: {gen_config_dict}")
-        except Exception as e:
-            print(f"Warning: Could not apply google generation_config: {e}")
-
-    # --- Process Google Safety Settings ---
-    if safety_settings_dict:
-        try:
-            processed_safety = {}
-            for key, value in safety_settings_dict.items():
-                try:
-                    harm_category = getattr(safety_types.HarmCategory, key)
-                    block_threshold = getattr(safety_types.HarmBlockThreshold, value)
-                    processed_safety[harm_category] = block_threshold
-                except AttributeError:
-                    print(
-                        f"Warning: Invalid safety setting key/value for Google: {key}={value}. Skipping."
-                    )
-            if processed_safety:
-                safety_settings = processed_safety
-                print(f"Using Google Safety Settings: {safety_settings_dict}")
-        except Exception as e:
-            print(f"Warning: Could not apply google safety_settings: {e}")
-
-    # --- Initialize Google Model ---
-    try:
-        model = genai.GenerativeModel(
-            model_name,
-            generation_config=generation_config if generation_config else None,
-            safety_settings=safety_settings if safety_settings else None,
-        )
-    except Exception as e:
-        print(f"Error initializing Google GenerativeModel '{model_name}': {e}")
-        return None, 0, 0
-
-    # --- API Call Loop ---
-    while attempt <= max_retries:
-        try:
-            prompt_token_count = model.count_tokens(prompt).total_tokens
-            print(
-                f"Sending request to Google model {model_name} (Attempt {attempt + 1}/{max_retries + 1})..."
-            )
-            response = model.generate_content(prompt)
-
-            content = None
-            completion_token_count = 0
-
-            if not response.candidates:
-                print(
-                    f"Warning: Google response blocked/empty. Feedback: {response.prompt_feedback}"
-                )
-                raise generation_types.BlockedPromptException(
-                    f"Prompt blocked: {response.prompt_feedback}"
-                )
-
-            finish_reason_obj = response.candidates[0].finish_reason
-            finish_reason_name = getattr(finish_reason_obj, "name", None)
-
-            if finish_reason_name != "STOP":
-                reason_display = (
-                    finish_reason_name if finish_reason_name else str(finish_reason_obj)
-                )
-                print(
-                    f"Warning: Google generation finished unexpectedly. Reason: {reason_display}"
-                )
-
-            try:
-                content = response.text
-                print(f"--- Google response received (Length: {len(content)}) ---")
-            except ValueError:
-                print(f"Warning: Could not extract text content from Google response.")
-                content = None
-
-            if content:
-                completion_token_count = model.count_tokens(
-                    response.candidates[0].content
-                ).total_tokens
-            else:
-                completion_token_count = 0
-
-            print(
-                f"--- Google Usage: Prompt Tokens≈{prompt_token_count}, Completions Tokens≈{completion_token_count} ---"
-            )
-            return (
-                content.strip() if content else None,
-                prompt_token_count,
-                completion_token_count,
-            )
-
-        # --- Google Error Handling ---
-        except generation_types.BlockedPromptException as bpe:
-            print(f"Error: Google prompt blocked. {bpe}")
-            attempt += 1
-            if attempt <= max_retries:
-                print(f"Retrying in {delay} seconds...")
-                time.sleep(delay)
-            else:
-                print(f"Max retries reached for blocked Google prompt. Skipping.")
-                return None, 0, 0
-        except Exception as e:
-            import traceback
-
-            print(
-                f"Error calling Google model {model_name} (Attempt {attempt + 1}/{max_retries + 1}): {e}"
-            )
-            # traceback.print_exc()
-            attempt += 1
-            if attempt <= max_retries:
-                print(f"Retrying in {delay} seconds...")
-                time.sleep(delay)
-            else:
-                print(f"Max retries reached for Google model. Skipping.")
-                return None, 0, 0
-    return None, 0, 0
 
 
 # ==================================================
@@ -269,7 +99,7 @@ def call_openrouter_llm(client, model_name, prompt, settings, max_retries=2, del
             response = client.chat.completions.create(
                 model=model_name,
                 messages=[{"role": "user", "content": prompt}],
-                max_tokens=gen_config.get("max_tokens", 2048),
+                max_tokens=gen_config.get("max_tokens", 32000),
                 temperature=gen_config.get("temperature", 0.7),
                 top_p=gen_config.get("top_p"),  # Pass None if not set
                 frequency_penalty=gen_config.get(
@@ -341,3 +171,28 @@ def call_openrouter_llm(client, model_name, prompt, settings, max_retries=2, del
             return None, 0, 0
 
     return None, 0, 0
+
+
+def setup_openai_client(api_settings):
+    """Sets up the OpenAI client using an API key from environment variables."""
+    api_key_env_var = api_settings.get("api_key_env_var", "OPENAI_API_KEY")
+    api_key = os.getenv(api_key_env_var)
+    if not api_key:
+        print(
+            f"Error: Environment variable {api_key_env_var} for OpenAI API key not set."
+        )
+        return None
+    try:
+        client = OpenAI(api_key=api_key)
+        client.models.list()  # Test connectivity
+        print("OpenAI client configured successfully.")
+        return client
+    except APIConnectionError as e:
+        print(f"OpenAI APIConnectionError: Failed to connect to OpenAI API: {e}")
+    except RateLimitError as e:
+        print(f"OpenAI RateLimitError: OpenAI API request exceeded rate limit: {e}")
+    except APIStatusError as e:
+        print(f"OpenAI APIStatusError: OpenAI API returned an API Error: {e}")
+    except Exception as e:
+        print(f"An unexpected error occurred during OpenAI client setup: {e}")
+    return None
