@@ -1,4 +1,3 @@
-# src/arc_utils.py
 import json
 import os
 import sys
@@ -10,7 +9,7 @@ def grid_to_str(grid: list[list[int]]):
     with rows separated by newlines and elements joined with no separator.
     Example: [[0, 7, 7], [7, 7, 7], [0, 7, 7]] -> "077\\n777\\n077" (11 chars)
     """
-    # Basic type checking for robustness
+
     if not isinstance(grid, list) or not all(isinstance(row, list) for row in grid):
         print(
             f"Warning: Invalid grid format received in grid_to_str: {grid}",
@@ -18,8 +17,6 @@ def grid_to_str(grid: list[list[int]]):
         )
         return "[Invalid Grid Data]"
     try:
-        # Join elements in each row with "" (no separator)
-        # Join the rows with "\\n" (newline character)
         return "\n".join(["".join(map(str, row)) for row in grid])
     except Exception as e:
         print(f"Error in grid_to_str: {e}\nGrid: {grid}", file=sys.stderr)
@@ -41,7 +38,7 @@ def format_grid_for_prompt(grid):
 def create_task_prompt_section(task_data):
     """Formats the examples and test input for a single ARC task."""
     prompt_section = ""
-    # Format training examples
+
     if task_data.get("train"):
         for i, pair in enumerate(task_data["train"]):
             if "input" in pair and "output" in pair:
@@ -50,10 +47,7 @@ def create_task_prompt_section(task_data):
             else:
                 prompt_section += f"E.g. {i + 1}: [Malformed train pair data]\n\n"
 
-    # Format test input
-    if (
-        task_data.get("test") and task_data["test"]
-    ):  # Check if list exists and is not empty
+    if task_data.get("test") and task_data["test"]:
         if "input" in task_data["test"][0]:
             test_input_grid = task_data["test"][0]["input"]
             prompt_section += f"Test Input:\n{test_input_grid}\n"
@@ -72,7 +66,7 @@ def load_arc_tasks(challenges_file_path):
     print(f"Attempting to load ARC challenges from: {challenges_file_path}")
     if not os.path.exists(challenges_file_path):
         print(f"Error: Challenges file not found at {challenges_file_path}")
-        # Provide more context on where the script expects the file
+
         expected_dir = os.path.dirname(challenges_file_path)
         print(f"Expected directory: {expected_dir}")
         print(f"Current working directory: {os.getcwd()}")

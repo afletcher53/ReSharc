@@ -16,7 +16,7 @@ from transformers import AutoModelForCausalLM, AutoTokenizer
 os.environ["TRANSFORMERS_CACHE"] = "/mnt/parscratch/users/aaron/huggingface"
 
 run = wandb.init(
-    project="arc-baseline-models",  # Replace with your project name
+    project="arc-baseline-models",
 )
 
 try:
@@ -51,14 +51,13 @@ def load_model(config):
 
 def prompt_model(model, tokenizer, prompts, config):
     """Prompts the model with the given input and returns the output."""
-    # prompts are a list of list of dictionary
+
     texts = tokenizer.apply_chat_template(
         prompts,
         tokenize=False,
         add_generation_prompt=True,
     )
 
-    # save texts to json file
     output_dir = config.get("arc_outputs_dir")
     os.makedirs(output_dir, exist_ok=True)
     output_file_path = os.path.join(

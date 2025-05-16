@@ -1,5 +1,3 @@
-# src/llm_utils.py
-
 import os
 import time
 
@@ -13,21 +11,16 @@ try:
         APIError,
         RateLimitError,
         APIConnectionError,
-    )  # Import specific errors
+    )
 except ImportError:
     print(
         "Warning: 'openai' library not installed. OpenRouter functionality will not be available."
     )
     print("Install it using: pip install openai")
-    OpenAI = None  # Define as None if import fails
+    OpenAI = None
 
-# Load environment variables
+
 load_dotenv()
-
-
-# ==================================================
-# OpenRouter Functions (using OpenAI library)
-# ==================================================
 
 
 def setup_openrouter_client(settings):
@@ -61,7 +54,7 @@ def setup_openrouter_client(settings):
                 "HTTP-Referer": site_url,
                 "X-Title": app_name,
             },
-            timeout=60.0,  # Add a default timeout
+            timeout=60.0,
         )
         print("OpenRouter client configured successfully.")
         return client
@@ -101,14 +94,9 @@ def call_openrouter_llm(client, model_name, prompt, settings, max_retries=2, del
                 messages=[{"role": "user", "content": prompt}],
                 max_tokens=gen_config.get("max_tokens", 32000),
                 temperature=gen_config.get("temperature", 0.7),
-                top_p=gen_config.get("top_p"),  # Pass None if not set
-                frequency_penalty=gen_config.get(
-                    "frequency_penalty"
-                ),  # Pass None if not set
-                presence_penalty=gen_config.get(
-                    "presence_penalty"
-                ),  # Pass None if not set
-                # Add other compatible parameters from gen_config if needed
+                top_p=gen_config.get("top_p"),
+                frequency_penalty=gen_config.get("frequency_penalty"),
+                presence_penalty=gen_config.get("presence_penalty"),
             )
 
             content = None
@@ -138,11 +126,10 @@ def call_openrouter_llm(client, model_name, prompt, settings, max_retries=2, del
                 completion_tokens,
             )
 
-        # --- OpenRouter Error Handling ---
         except RateLimitError as rle:
             print(f"Error: OpenRouter Rate Limit Exceeded for {model_name}. {rle}")
-            # Rate limits often require longer delays or stopping
-            attempt = max_retries + 1  # Stop retrying on rate limit
+
+            attempt = max_retries + 1
             print("Stopping retries due to rate limit.")
             return None, 0, 0
         except APIError as apie:
@@ -159,9 +146,7 @@ def call_openrouter_llm(client, model_name, prompt, settings, max_retries=2, del
             print(
                 f"Error calling OpenRouter model {model_name} (Attempt {attempt + 1}/{max_retries + 1}): {e}"
             )
-            # traceback.print_exc()
 
-        # Common retry logic for non-rate-limit errors
         attempt += 1
         if attempt <= max_retries:
             print(f"Retrying in {delay} seconds...")
@@ -184,7 +169,7 @@ def setup_openai_client(api_settings):
         return None
     try:
         client = OpenAI(api_key=api_key)
-        client.models.list()  # Test connectivity
+        client.models.list()
         print("OpenAI client configured successfully.")
         return client
     except APIConnectionError as e:

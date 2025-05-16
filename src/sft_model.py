@@ -121,9 +121,9 @@ def calculate_exact_match_score(possible: list[list], solution: list[list]) -> b
     )
 
 
-# ==============================================================================
-# ========== Helper Functions (Parsing & Scoring) ==========
-# ==============================================================================
+
+
+
 
 
 def find_last_list_of_lists_with_indices(
@@ -155,18 +155,18 @@ def find_last_list_of_lists_with_indices(
         if start_bracket_index != -1:
             potential_json_str = text[start_bracket_index : end_bracket_index + 1]
             try:
-                # Basic check for structure before full JSON parsing
+                
                 if not potential_json_str.startswith(
                     "[["
                 ) or not potential_json_str.endswith("]]"):
                     if not (
                         potential_json_str.startswith("[]")
                         and len(potential_json_str) == 2
-                    ):  # Allow empty list
+                    ):  
                         if not (
                             potential_json_str.startswith("[[]")
                             and potential_json_str.endswith("]]")
-                        ):  # Allow list containing empty list
+                        ):  
                             raise json.JSONDecodeError(
                                 "Does not start/end with '[[' ']]'",
                                 potential_json_str,
@@ -175,24 +175,24 @@ def find_last_list_of_lists_with_indices(
 
                 parsed_data = json.loads(potential_json_str)
 
-                # Check if it's a list and all elements are lists
+                
                 if isinstance(parsed_data, list) and all(
                     isinstance(item, list) for item in parsed_data
                 ):
-                    # Additional check: ensure internal elements are numbers or compatible types if needed
-                    # (This depends on expected grid content, skipping strict internal type check for now)
+                    
+                    
                     return parsed_data, start_bracket_index, end_bracket_index + 1
 
             except json.JSONDecodeError:
-                pass  # Ignore decoding errors for this substring, continue search
+                pass  
 
-        # Move to the character before the found ']' to avoid re-checking the same invalid structure
+        
         last_checked_end = end_bracket_index
 
 
-# ==============================================================================
-# ========== LogGenerationCallback Class ==========
-# ==============================================================================
+
+
+
 
 
 class LogGenerationCallback(TrainerCallback):
@@ -205,7 +205,7 @@ class LogGenerationCallback(TrainerCallback):
         self,
         eval_examples: List[
             Dict[str, Any]
-        ],  # Expects dicts with 'task_id' and 'messages'
+        ],  
         tokenizer: AutoTokenizer,
         num_examples: int = 5,
         wandb_table_max_str_len: int = 20000,
@@ -218,7 +218,7 @@ class LogGenerationCallback(TrainerCallback):
         self.solution_map = solution_map
         self.config = config
 
-        # Select a subset of the provided examples randomly
+        
         self.num_examples = min(num_examples, len(eval_examples))
         if self.num_examples > 0:
             self.eval_examples = random.sample(eval_examples, self.num_examples)
@@ -231,7 +231,7 @@ class LogGenerationCallback(TrainerCallback):
                 "Warning: LogGenerationCallback initialized with zero evaluation examples."
             )
 
-        # Ensure EOS token ID is set for generation termination check
+        
         self.eos_token_id = tokenizer.eos_token_id
         if (
             self.eos_token_id is None
@@ -262,7 +262,7 @@ class LogGenerationCallback(TrainerCallback):
             print("LogGenerationCallback: No evaluation examples to process.")
             return
 
-        generations = []  # List to store results for each example
+        generations = []  
         model.eval()
         device = model.device
 
@@ -273,7 +273,7 @@ class LogGenerationCallback(TrainerCallback):
         for i, eval_example in enumerate(self.eval_examples):
             task_id = eval_example.get("task_id", "UNKNOWN_TASK_ID")
 
-            # Initialize log entry with defaults
+            
             generation_log = {
                 "step": state.global_step,
                 "task_id": task_id,
@@ -330,7 +330,7 @@ class LogGenerationCallback(TrainerCallback):
                 continue
 
             try:
-                # --- Generation ---
+                
                 with torch.no_grad():
                     outputs = model.generate(
                         input_ids=input_ids,
@@ -352,7 +352,7 @@ class LogGenerationCallback(TrainerCallback):
                 generation_log["generated_text"] = generated_text
                 generation_log["num_generated_tokens"] = num_generated_tokens
 
-                # Determine termination reason
+                
                 hit_max_length = (
                     num_generated_tokens >= self.config["baseline_models"]["max_tokens"]
                 )
@@ -371,10 +371,10 @@ class LogGenerationCallback(TrainerCallback):
                 generation_log["termination_reason"] = termination_reason
                 generation_log["hit_max_length"] = hit_max_length
 
-                # --- Parsing and Scoring ---
+                
                 predicted_grid = None
 
-                # 1. Parse Predicted Grid
+                
                 try:
                     parse_result = find_last_list_of_lists_with_indices(generated_text)
                     if parse_result:
@@ -389,13 +389,13 @@ class LogGenerationCallback(TrainerCallback):
                         f"Pred Parsing Exception: {str(e)}"
                     )
 
-                # 3. Calculate Scores if both grids are valid
+                
                 if predicted_grid is not None and solution is not None:
                     if is_jagged(predicted_grid):
                         generation_log["parse_error_pred"] = (
                             generation_log.get("parse_error_pred") or ""
                         ) + "; Is Jagged"
-                        # Note: Scoring functions return default False/0.0 for jagged input
+                        
 
                     generation_log["grid_dimension_match"] = (
                         calculate_grid_dimension_score(predicted_grid, solution)
@@ -423,26 +423,26 @@ class LogGenerationCallback(TrainerCallback):
                         f"  Skipped scoring Task {task_id}: Gold answer parsing failed."
                     )
 
-                # --- End Parsing and Scoring ---
+                
 
             except Exception as e:
                 error_msg = f"Error during generation/scoring: {str(e)}"
-                print(f"  {error_msg} for Task ID {task_id}, Example #{i + 1}")
+                print(f"  {error_msg} for Task ID {task_id}, Example 
                 generation_log["error"] = (
-                    error_msg  # Log the overall error for this example
+                    error_msg  
                 )
 
-            generations.append(generation_log)  # Append results for this example
+            generations.append(generation_log)  
 
-        # --- Calculate and Log Aggregate Scores ---
+        
         num_total_examples_processed = len(
             generations
-        )  # Use length of generations list
+        )  
         successful_scores_list = []
 
         for log_entry in generations:
-            # Consider scoring successful if no parsing errors occurred for *both* pred and gold
-            # And no overall 'error' was logged for the example during generation etc.
+            
+            
             pred_ok = (
                 log_entry.get("parse_error_pred") is None
                 and log_entry.get("parsed_prediction") is not None
@@ -463,7 +463,7 @@ class LogGenerationCallback(TrainerCallback):
         num_successful = len(successful_scores_list)
         num_failed = num_total_examples_processed - num_successful
 
-        # Calculate averages using numpy, handles boolean conversion (True=1, False=0)
+        
         if num_successful > 0:
             avg_scores = {
                 f"eval/avg_grid_dimension_match_{self.num_examples}samples": np.mean(
@@ -479,7 +479,7 @@ class LogGenerationCallback(TrainerCallback):
                     [s["foreground_pixel_match"] for s in successful_scores_list]
                 ),
             }
-        else:  # Avoid division by zero / NaN issues if no examples were successful
+        else:  
             avg_scores = {
                 f"eval/avg_grid_dimension_match_{self.num_examples}samples": 0.0,
                 f"eval/avg_pixel_match_{self.num_examples}samples": 0.0,
@@ -513,12 +513,12 @@ class LogGenerationCallback(TrainerCallback):
 
             df_generations = pd.DataFrame(generations)
 
-            #             f"eval/avg_grid_dimension_match_{self.num_examples}samples": 0.0,
-            # f"eval/avg_pixel_match_{self.num_examples}samples": 0.0,
-            # f"eval/avg_exact_match_{self.num_examples}samples": 0.0,
-            # f"eval/avg_foreground_pixel_match_{self.num_examples}samples": 0.0,
+            
+            
+            
+            
 
-            # Define desired column order
+            
             cols_order = [
                 "step",
                 "task_id",
@@ -533,17 +533,17 @@ class LogGenerationCallback(TrainerCallback):
                 "parse_error_pred",
                 "num_generated_tokens",
                 "termination_reason",
-                "hit_max_length",  # Generation stats
+                "hit_max_length",  
             ]
-            # Filter to only existing columns in the DataFrame to avoid errors
+            
             existing_cols = [col for col in cols_order if col in df_generations.columns]
-            df_generations = df_generations[existing_cols]  # Reorder DataFrame
+            df_generations = df_generations[existing_cols]  
 
             wandb.log(
                 {"evaluation_generations": wandb.Table(dataframe=df_generations)},
                 step=state.global_step,
             )
-        except ImportError:  # Fallback if pandas is not installed
+        except ImportError:  
             print(
                 "LogGenerationCallback Warning: pandas not found. Logging table as list of dicts."
             )
@@ -552,7 +552,7 @@ class LogGenerationCallback(TrainerCallback):
             print(
                 f"LogGenerationCallback Error: Failed logging generations table to W&B: {e}"
             )
-        # --- End Log Table ---
+        
 
         print(
             f"--- LogGenerationCallback: Finished logging ({num_successful}/{num_total_examples_processed} scored successfully) ---"
@@ -759,7 +759,7 @@ def train_model(train_dataset, eval_dataset, solutions, config):
             "Warning: No evaluation examples collected for LogGenerationCallback. Callback might not function correctly."
         )
 
-    # Initialize the callback, passing the list of example dictionaries
+    
     log_generation_callback = LogGenerationCallback(
         eval_examples=eval_examples_list,
         solution_map=solutions,
@@ -771,9 +771,9 @@ def train_model(train_dataset, eval_dataset, solutions, config):
     print("Initializing SFT Trainer...")
     trainer = SFTTrainer(
         model=model,
-        processing_class=tokenizer,  # Pass tokenizer explicitly
+        processing_class=tokenizer,  
         train_dataset=train_dataset,
-        eval_dataset=eval_dataset,  # Pass eval_dataset explicitly
+        eval_dataset=eval_dataset,  
         peft_config=peft_config if use_peft else None,
         args=training_arguments,
         callbacks=[log_generation_callback],
@@ -1160,7 +1160,7 @@ def generate_dataset(config):
     random.shuffle(final_sft_data)
 
     n_samples = len(final_sft_data)
-    n_eval = max(1, int(n_samples * 0.2))  # Ensure at least 1 eval sample if possible
+    n_eval = max(1, int(n_samples * 0.2))  
     n_train = n_samples - n_eval
 
     if n_train <= 0:
@@ -1171,7 +1171,7 @@ def generate_dataset(config):
         sys.exit(1)
 
     training_list = final_sft_data[:n_train]
-    evaluation_list = final_sft_data[n_train:]  # Take remaining for eval
+    evaluation_list = final_sft_data[n_train:]  
 
     print(
         f"Training set size: {len(training_list)}, Evaluation set size: {len(evaluation_list)}"

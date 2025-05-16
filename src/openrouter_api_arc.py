@@ -1,29 +1,27 @@
-# scripts/phase1_generate.py
-
 import os
 import sys
 import json
 import yaml
 import argparse
 
-# --- Path Setup ---
+
 project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 if project_root not in sys.path:
     sys.path.insert(0, project_root)
 print(f"Project Root (added to sys.path): {project_root}")
 print(f"Current Working Directory: {os.getcwd()}")
 print(f"Python sys.path: {sys.path}")
-# --- End Path Setup ---
+
 
 from dotenv import load_dotenv
 
-# Import all necessary functions from llm_utils
+
 from src.llm_utils import (
     setup_openrouter_client,
     call_openrouter_llm,
 )
 
-# Import arc_utils
+
 try:
     from src.arc_utils import (
         load_arc_tasks,
@@ -35,7 +33,6 @@ except ImportError:
     sys.exit(1)
 
 
-# --- Main Execution Logic ---
 if __name__ == "__main__":
     load_dotenv()
 
@@ -51,7 +48,6 @@ if __name__ == "__main__":
     args = parser.parse_args()
     start_task_id_arg = args.start_task_id
 
-    # 1. Load Configuration
     try:
         with open("config/config.yaml", "r") as f:
             config = yaml.safe_load(f)
@@ -62,8 +58,6 @@ if __name__ == "__main__":
         print(f"Error parsing config file: {e}")
         sys.exit(1)
 
-    # 2. Determine API Provider and Setup Client/Configuration
-    # (Keep this section as it is)
     api_provider = config.get("api_provider", "google").lower()
     print(f"Selected API Provider: {api_provider}")
     llm_client = None
@@ -93,7 +87,6 @@ if __name__ == "__main__":
         sys.exit(1)
     print(f"Target '{api_provider}' teacher models: {models_to_use}")
 
-    # 3. Load ARC Tasks
     arc_data_dir = config.get("arc_data_dir", "data/arc")
     challenges_file = config.get(
         "training_challenges_file", "arc-agi_training_challenges.json"
@@ -105,24 +98,20 @@ if __name__ == "__main__":
 
     evaluation_challenges_path = os.path.join(arc_data_dir, evaluation_challenges_file)
 
-    # arc_challenges_path = os.path.join(arc_data_dir, challenges_file)
-
     arc_tasks = load_arc_tasks(evaluation_challenges_path)
     if arc_tasks is None:
         sys.exit(1)
 
     model_name = models_to_use[0]
-    # 4. Prepare Output File
+
     output_file = config.get(
         "raw_generations_output_file",
         f"data/generated_sft/evaluation_{model_name}_generations.jsonl",
     )
     os.makedirs(os.path.dirname(output_file), exist_ok=True)
 
-    # --- 5. Process Tasks --- <<< MODIFIED: Section adjusted for start_task_id >>>
-    all_task_ids = list(arc_tasks.keys())  # Get all task IDs first
+    all_task_ids = list(arc_tasks.keys())
 
-    # Load up raw generations file and get the existing task IDs
     existing_task_ids = set()
     if os.path.exists(output_file):
         with open(output_file, "r", encoding="utf-8") as f:
@@ -135,7 +124,6 @@ if __name__ == "__main__":
                     continue
     print(f"Found {len(existing_task_ids)} existing task IDs in {output_file}")
 
-    # Filter out existing task IDs from all_task_ids
     all_task_ids = [
         task_id for task_id in all_task_ids if task_id not in existing_task_ids
     ]
@@ -143,7 +131,6 @@ if __name__ == "__main__":
         f"Filtered {len(existing_task_ids)} existing task IDs, {len(all_task_ids)} total tasks left to process"
     )
 
-    # Determine the actual list of task IDs to process based on start_task_id_arg
     tasks_to_consider = all_task_ids
     if start_task_id_arg:
         try:
@@ -199,7 +186,6 @@ if __name__ == "__main__":
                     prompt_tokens = 0
                     completion_tokens = 0
 
-                    # Call the appropriate LLM function
                     if api_provider == "openrouter":
                         raw_response, prompt_tokens, completion_tokens = (
                             call_openrouter_llm(
@@ -207,18 +193,15 @@ if __name__ == "__main__":
                             )
                         )
 
-                    # Accumulate token counts
                     total_prompt_tokens += prompt_tokens
                     total_completion_tokens += completion_tokens
 
-                    # Save result if successful
                     if raw_response is not None:
                         result_record = {
                             "task_id": task_id,
                             "test_case_index": test_case_index,
                             "api_provider": api_provider,
                             "teacher_model": model_name,
-                            # "prompt": full_prompt, # Optional
                             "raw_response": raw_response,
                             "prompt_tokens": prompt_tokens,
                             "completion_tokens": completion_tokens,
@@ -235,9 +218,6 @@ if __name__ == "__main__":
                         print(
                             f"Failed to get response for Task {task_id} from {model_name} ({api_provider}) after retries."
                         )
-
-                    # Optional: Add delay between API calls
-                    # time.sleep(1)
 
     except IOError as e:
         print(f"Error opening or writing to output file {output_file}: {e}")

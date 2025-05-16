@@ -2,25 +2,24 @@ import os
 import json
 from collections import defaultdict
 
-# --- Configuration ---
-GENERATED_SFT_DIR = "./data/generated_sft"  # Path to your generated files
+
+GENERATED_SFT_DIR = "./data/generated_sft"
 EVALUATION_SOLUTIONS_FILE = "./data/arc/arc-agi_evaluation_solutions.json"
 TRAINING_SOLUTIONS_FILE = "./data/arc/arc-agi_training_solutions.json"
 
-# --- ANSI Color Codes ---
-RED = "\033[91m"  # For differences/errors
-GREEN = "\033[92m"  # For perfect matches
-RESET = "\033[0m"  # Reset color
-DIM = "\033[2m"  # Dim text (for padding/missing cells)
-YELLOW = "\033[93m"  # For warnings
-CYAN = "\033[96m"  # For info/headers
 
-# --- Load Ground Truth Solutions ---
+RED = "\033[91m"
+GREEN = "\033[92m"
+RESET = "\033[0m"
+DIM = "\033[2m"
+YELLOW = "\033[93m"
+CYAN = "\033[96m"
+
+
 ground_truth_solutions = {}
 
 
 def load_json_solutions(filepath):
-    # (Function remains the same)
     solutions = {}
     try:
         with open(filepath, "r") as f:
@@ -45,8 +44,6 @@ if not ground_truth_solutions:
     exit()
 
 
-# --- Helper Functions (format_cell, print_comparison, find_last_list_of_lists) ---
-# (These functions remain the same as in the previous version)
 def format_cell(value, is_different, is_placeholder=False, width=3):
     val_str = str(value)
     if is_placeholder:
@@ -156,40 +153,37 @@ def find_last_list_of_lists(text: str):
         last_checked_end = end_index
 
 
-# --- Main Script Logic ---
-
 print(f"\nStarting validation in directory: {GENERATED_SFT_DIR}")
 
 if not os.path.isdir(GENERATED_SFT_DIR):
     print(f"{RED}Error: Directory not found: {GENERATED_SFT_DIR}{RESET}")
     exit()
 
-# --- Initialize Per-File Statistics Storage ---
-per_file_stats = {}
-overall_file_processing_errors = 0  # Count files that couldn't be opened/read at all
 
-# Process each file
+per_file_stats = {}
+overall_file_processing_errors = 0
+
+
 processed_files_count = 0
 for filename in os.listdir(GENERATED_SFT_DIR):
     if not filename.endswith(".jsonl"):
-        continue  # Process only .jsonl files
+        continue
     processed_files_count += 1
 
     jsonl_file_path = os.path.join(GENERATED_SFT_DIR, filename)
-    all_extracted_data = []  # Store extracted data for this file
-    file_has_line_errors = False  # Track errors within lines of this file
+    all_extracted_data = []
+    file_has_line_errors = False
 
-    # --- Initialize Stats for Current File ---
     current_file_stats = {
         "total_tasks": 0,
         "comparisons_attempted": 0,
         "matches": 0,
         "mismatches": 0,
-        "candidate_errors": 0,  # Unparseable answers
+        "candidate_errors": 0,
         "solution_errors": 0,
         "unknown_ids": 0,
-        "line_json_errors": 0,  # Count lines that failed JSON parsing
-        "line_processing_errors": 0,  # Count other errors processing a line
+        "line_json_errors": 0,
+        "line_processing_errors": 0,
     }
 
     print(f"\n{CYAN}{'=' * 15} Processing file: {filename} {'=' * 15}{RESET}\n")
@@ -197,17 +191,15 @@ for filename in os.listdir(GENERATED_SFT_DIR):
         with open(jsonl_file_path, "r", encoding="utf-8") as infile:
             for i, line in enumerate(infile):
                 line_number = i + 1
-                task_id = f"UNKNOWN_{filename}_{line_number}"  # Default
-                extracted_list = None  # Initialize
+                task_id = f"UNKNOWN_{filename}_{line_number}"
+                extracted_list = None
 
-                # --- Increment Task Count for this file ---
                 current_file_stats["total_tasks"] += 1
 
                 try:
                     data = json.loads(line.strip())
-                    task_id = data.get("task_id", task_id)  # Overwrite if found
+                    task_id = data.get("task_id", task_id)
 
-                    # Handle potential list in raw_response
                     raw_response_value = data.get("raw_response", "")
                     text_to_search = ""
                     if isinstance(raw_response_value, str):
@@ -230,12 +222,9 @@ for filename in os.listdir(GENERATED_SFT_DIR):
                         file_has_line_errors = True
                         current_file_stats["line_processing_errors"] += 1
 
-                    # Attempt extraction if we have text
                     if text_to_search:
                         extracted_list = find_last_list_of_lists(text_to_search)
-                    # else: extracted_list remains None
 
-                    # --- Store Result ---
                     result = {
                         "line": line_number,
                         "task_id": task_id,
@@ -249,7 +238,7 @@ for filename in os.listdir(GENERATED_SFT_DIR):
                     )
                     file_has_line_errors = True
                     current_file_stats["line_json_errors"] += 1
-                    # Append a placeholder to keep counts consistent if needed, or just skip
+
                     all_extracted_data.append(
                         {
                             "line": line_number,
@@ -276,49 +265,40 @@ for filename in os.listdir(GENERATED_SFT_DIR):
     except Exception as e:
         print(f"{RED}Error opening or reading file {jsonl_file_path}: {e}{RESET}")
         overall_file_processing_errors += 1
-        per_file_stats[filename] = {
-            "error": f"Failed to open/read: {e}"
-        }  # Mark file as failed
-        continue  # Skip to next file
+        per_file_stats[filename] = {"error": f"Failed to open/read: {e}"}
+        continue
 
     print(f"\n--- File {filename}: Comparison Phase ---")
 
-    # --- Perform Comparisons and Update File Stats ---
     processed_task_ids_in_file = set()
     for task_data in all_extracted_data:
-        # Skip if this line had a fundamental error recorded during parsing
         if task_data.get("error"):
             continue
 
         task_id = task_data.get("task_id")
 
         if task_id in processed_task_ids_in_file:
-            continue  # Avoid duplicate task processing
+            continue
         processed_task_ids_in_file.add(task_id)
 
-        # Check Task ID Validity
         if task_id.startswith("UNKNOWN"):
             print(f"\n--- Comparison for Task ID: {task_id} ---")
             print(f"{YELLOW}Skipping comparison: Task ID is unknown.{RESET}")
             current_file_stats["unknown_ids"] += 1
             continue
 
-        # Check Candidate Validity (Parseability)
         candidate = task_data.get("extracted_list")
         if candidate is None:
-            # No comparison possible, count as candidate error
             current_file_stats["candidate_errors"] += 1
-            # Optionally print context (already handled by print_comparison if called)
-            # print_comparison(candidate, None, task_id) # Call to show context if needed
+
             print(f"\n--- Comparison for Task ID: {task_id} ---")
             print(
                 f"{YELLOW}Skipping comparison: Candidate grid could not be extracted or is invalid.{RESET}"
             )
             if task_id in ground_truth_solutions:
                 print(f"{DIM}(Ground truth solution exists){RESET}")
-            continue  # Cannot compare
+            continue
 
-        # Check Solution Validity
         solution_entry = ground_truth_solutions.get(task_id)
         solution = None
         if (
@@ -328,16 +308,14 @@ for filename in os.listdir(GENERATED_SFT_DIR):
         ):
             solution = solution_entry[0]
         else:
-            # Have valid candidate, but no valid solution
             current_file_stats["solution_errors"] += 1
             print(f"\n--- Comparison for Task ID: {task_id} ---")
             print(
                 f"{YELLOW}Skipping comparison: Ground truth solution not found or invalid.{RESET}"
             )
-            # print_comparison(candidate, solution, task_id) # Call to show context
-            continue  # Cannot compare
 
-        # --- Perform Comparison (Both Candidate and Solution are Valid) ---
+            continue
+
         current_file_stats["comparisons_attempted"] += 1
         is_match = print_comparison(candidate, solution, task_id)
 
@@ -347,21 +325,17 @@ for filename in os.listdir(GENERATED_SFT_DIR):
         else:
             current_file_stats["mismatches"] += 1
 
-    # --- Store Final Stats for this File ---
     per_file_stats[filename] = current_file_stats
     print(
         f"\n{CYAN}{'=' * 15} Finished processing file: {filename} {'=' * 15}{RESET}\n"
     )
 
 
-# --- Final Summary Reports ---
-
-# --- Per-Model Summary ---
 print("\n" + "=" * 70)
 print(f"{CYAN}{' ' * 25}PER-MODEL SUMMARY{RESET}")
 print("=" * 70)
 
-# Sort files alphabetically for consistent reporting
+
 sorted_filenames = sorted(per_file_stats.keys())
 
 for filename in sorted_filenames:
@@ -375,21 +349,17 @@ for filename in sorted_filenames:
     total_tasks = stats["total_tasks"]
     comparisons = stats["comparisons_attempted"]
     matches = stats["matches"]
-    candidate_errors = stats["candidate_errors"]  # Unparseable
+    candidate_errors = stats["candidate_errors"]
     solution_errors = stats["solution_errors"]
     unknown_ids = stats["unknown_ids"]
     line_errors = stats["line_json_errors"] + stats["line_processing_errors"]
 
-    # Calculate Parseable count (tasks where candidate was successfully extracted)
-    # Note: This count includes tasks where the solution might have been missing.
     parseable_count = total_tasks - candidate_errors - unknown_ids - line_errors
 
-    # Calculate Percentages (handle division by zero)
     pct_parseable = (parseable_count / total_tasks) * 100 if total_tasks > 0 else 0
     pct_unparseable = (candidate_errors / total_tasks) * 100 if total_tasks > 0 else 0
     pct_correct_of_comparable = (matches / comparisons) * 100 if comparisons > 0 else 0
-    # Optional: Correctness relative to parseable tasks (might be misleading if many solution errors)
-    # pct_correct_of_parseable = (matches / parseable_count) * 100 if parseable_count > 0 else 0
+
     pct_solution_errors = (
         (solution_errors / total_tasks) * 100 if total_tasks > 0 else 0
     )
@@ -405,7 +375,7 @@ for filename in sorted_filenames:
     print(f"  - Unknown Task IDs: {unknown_ids} ({pct_unknown_ids:.2f}%)")
     print(
         f"  - Ground Truth Solution Missing/Invalid: {solution_errors} ({pct_solution_errors:.2f}%)"
-    )  # (where candidate was parseable)
+    )
     print("-" * 40)
     print(
         f"  Comparisons Attempted (Parseable Candidate & Valid Solution): {comparisons}"
@@ -423,12 +393,11 @@ for filename in sorted_filenames:
     print("-" * 70)
 
 
-# --- Overall Summary ---
 print("\n" + "=" * 70)
 print(f"{CYAN}{' ' * 25}OVERALL SUMMARY{RESET}")
 print("=" * 70)
 
-# Calculate overall totals by summing per-file stats
+
 overall_stats = defaultdict(int)
 valid_files_processed = 0
 for filename in sorted_filenames:
@@ -461,9 +430,7 @@ if total_tasks > 0:
     overall_pct_unparseable = (candidate_errors / total_tasks) * 100
     overall_pct_line_errors = (line_errors / total_tasks) * 100
     overall_pct_unknown_ids = (unknown_ids / total_tasks) * 100
-    overall_pct_solution_errors = (
-        solution_errors / total_tasks
-    ) * 100  # Relative to total tasks
+    overall_pct_solution_errors = (solution_errors / total_tasks) * 100
 
     print(
         f"  - Parseable Answers: {overall_parseable_count} ({overall_pct_parseable:.2f}%)"

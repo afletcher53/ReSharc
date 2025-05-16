@@ -3,7 +3,7 @@
 import json
 import os
 
-# --- ANSI Color Codes --- (Keep these as they are)
+
 RED = "\033[91m"
 GREEN = "\033[92m"
 RESET = "\033[0m"
@@ -20,7 +20,7 @@ def load_cots_list(cots_file_path):
         expected_dir = os.path.dirname(cots_file_path)
         print(f"Expected directory: {expected_dir}")
         print(f"Current working directory: {os.getcwd()}")
-        return None  # Return None if file not found
+        return None
 
     cots_list = []
     try:
@@ -37,15 +37,14 @@ def load_cots_list(cots_file_path):
         )
     except IOError as e:
         print(f"{RED}Error reading file {cots_file_path}: {e}{RESET}")
-        return None  # Return None on IO error
+        return None
     except Exception as e:
         print(f"{RED}Unexpected error during COTS loading: {e}{RESET}")
-        return None  # Return None on other unexpected errors
+        return None
     return cots_list
 
 
 def find_last_list_of_lists(text: str):
-    # (Your function remains the same)
     last_checked_end = len(text)
     while True:
         end_index = text.rfind("]", 0, last_checked_end)
@@ -74,14 +73,13 @@ def find_last_list_of_lists(text: str):
                     return parsed_data
             except json.JSONDecodeError:
                 pass
-        last_checked_end = end_index  # Ensure progress in the loop
+        last_checked_end = end_index
 
 
 def load_json_solutions(filepath):
-    # (Your function remains the same)
     solutions = {}
     try:
-        with open(filepath, "r", encoding="utf-8") as f:  # Added encoding
+        with open(filepath, "r", encoding="utf-8") as f:
             solutions = json.load(f)
         print(f"{GREEN}Loaded solutions from {filepath}{RESET}")
     except FileNotFoundError:
@@ -93,7 +91,6 @@ def load_json_solutions(filepath):
     return solutions
 
 
-# --- Load Ground Truth Solutions ---
 ground_truth_solutions = {}
 TRAINING_SOLUTIONS_FILE = "./data/arc/arc-agi_training_solutions.json"
 EVALUATION_SOLUTIONS_FILE = "./data/arc/arc-agi_evaluation_solutions.json"
@@ -101,7 +98,7 @@ EVALUATION_SOLUTIONS_FILE = "./data/arc/arc-agi_evaluation_solutions.json"
 ground_truth_solutions.update(load_json_solutions(TRAINING_SOLUTIONS_FILE))
 ground_truth_solutions.update(load_json_solutions(EVALUATION_SOLUTIONS_FILE))
 
-# --- Load COTS Data ---
+
 cots_input_file = "./data/filtered_sft/combined_output.jsonl"
 cots = load_cots_list(cots_input_file)
 
@@ -113,26 +110,25 @@ def parse_and_evaluate_cots(cots_data):
     """
     if not cots_data:
         print(f"{YELLOW}Warning: COTS data is empty or None. Nothing to parse.{RESET}")
-        return []  # Return empty list if input is None or empty
+        return []
 
     processed_cots = []
     for i, cots_item_orig in enumerate(cots_data):
-        cots_item = cots_item_orig.copy()  # Work on a copy to avoid modifying original dict during iteration if re-assigning cots_data
+        cots_item = cots_item_orig.copy()
 
-        # Initialize correctness and model_answer
         cots_item["model_answer"] = None
-        cots_item["correct"] = 0  # Default to incorrect
+        cots_item["correct"] = 0
 
         response_data = cots_item.get("raw_response")
         response_str = None
 
         if isinstance(response_data, list) and response_data:
-            response_str = response_data[0]  # Take the first element if it's a list
+            response_str = response_data[0]
             if not isinstance(response_str, str):
                 print(
                     f"{YELLOW}Warning: Item {i}, task_id '{cots_item.get('task_id', 'N/A')}': raw_response list element is not a string. Response: {response_str}{RESET}"
                 )
-                response_str = None  # Cannot parse non-string
+                response_str = None
         elif isinstance(response_data, str):
             response_str = response_data
         else:
@@ -144,14 +140,13 @@ def parse_and_evaluate_cots(cots_data):
         if response_str:
             parsed_model_answer = find_last_list_of_lists(response_str)
             cots_item["model_answer"] = parsed_model_answer
-        # else: model_answer remains None, correct remains 0
 
         task_id = cots_item.get("task_id")
         if not task_id:
             print(
                 f"{YELLOW}Warning: Item {i} is missing 'task_id'. Cannot determine correctness. Marking as incorrect.{RESET}"
             )
-            # 'correct' is already 0
+
             processed_cots.append(cots_item)
             continue
 
@@ -160,11 +155,10 @@ def parse_and_evaluate_cots(cots_data):
             print(
                 f"{YELLOW}Warning: No ground truth solution found for task_id '{task_id}'. Item {i} marked as incorrect.{RESET}"
             )
-            # 'correct' is already 0
+
             processed_cots.append(cots_item)
             continue
 
-        # Assuming the first solution in the list is the target
         ground_truth_answer = solution_list[0]
 
         if (
@@ -172,16 +166,12 @@ def parse_and_evaluate_cots(cots_data):
             and parsed_model_answer == ground_truth_answer
         ):
             cots_item["correct"] = 1
-        # else: 'correct' remains 0 (if no model_answer or it doesn't match)
 
-        # Process token counts
         if "prompt_tokens" in cots_item and "completion_tokens" in cots_item:
             try:
-                # Ensure they are numbers, convert if possible
                 p_tokens = cots_item["prompt_tokens"]
                 c_tokens = cots_item["completion_tokens"]
 
-                # Handle cases where tokens might already be numbers or strings
                 cots_item["prompt_tokens"] = (
                     int(p_tokens) if p_tokens is not None else 0
                 )
@@ -204,16 +194,13 @@ def parse_and_evaluate_cots(cots_data):
     return processed_cots
 
 
-# --- Main Processing ---
 if cots is not None:
     print(
         f"\n{CYAN}Starting parsing and evaluation of {len(cots)} COTS items...{RESET}"
     )
-    # This function will now add 'correct': 0 or 1 to each item.
-    # It returns a new list with the processed items.
+
     processed_cots_dataset = parse_and_evaluate_cots(cots)
 
-    # Save the entire dataset with the 0/1 'correct' field
     output_full_dataset_path = "./data/filtered_sft/arc_cots_full_eval.jsonl"
     try:
         with open(output_full_dataset_path, "w", encoding="utf-8") as f:
@@ -227,13 +214,10 @@ if cots is not None:
     except Exception as e:
         print(f"{RED}Unexpected error while saving full dataset: {e}{RESET}")
 
-    # --- Retrieve only the COTS items marked as correct (1) ---
-    # This is similar to your original 'correct_cots' but uses the 0/1 value
     actually_correct_cots = [
         item for item in processed_cots_dataset if item.get("correct") == 1
     ]
 
-    # --- Calculate average total_tokens for the 'actually_correct_cots' ---
     total_tokens_sum = 0
     correct_items_with_tokens_count = 0
 
@@ -254,8 +238,6 @@ if cots is not None:
             f"{YELLOW}No COTS marked as correct (1) had valid 'total_tokens' to average.{RESET}"
         )
 
-    # --- Save only the COTS marked as correct (1) to a separate jsonl file ---
-    # This is equivalent to your original 'arc_correct_cots.jsonl'
     output_correct_only_path = "./data/filtered_sft/arc_cots_correct_only.jsonl"
     try:
         with open(output_correct_only_path, "w", encoding="utf-8") as f:

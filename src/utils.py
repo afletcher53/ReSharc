@@ -3,8 +3,6 @@ import os
 import numpy as np
 import pandas as pd
 
-# ========== Scoring Metrics ========== #
-
 
 def calculate_grid_dimension_score(possible: list[list], solution: list[list]) -> bool:
     """
@@ -93,7 +91,6 @@ def calculate_exact_match_score(possible: list[list], solution: list[list]) -> b
     )
 
 
-# ========== Scoring Functions ========== #
 def generate_scorecard(results: dict, total_tasks: int):
     """
     Calculates and formats a scorecard from the comparison results.
@@ -113,7 +110,7 @@ def generate_scorecard(results: dict, total_tasks: int):
     grid_dim_matches = 0
     exact_matches = 0
     total_cell_match_score = 0.0
-    valid_cell_match_tasks = 0  # Tasks that were parseable and non-jagged
+    valid_cell_match_tasks = 0
 
     for task_id, scores in results.items():
         if scores is None:
@@ -123,7 +120,6 @@ def generate_scorecard(results: dict, total_tasks: int):
             if scores["is_jagged"]:
                 jagged_answers += 1
             else:
-                # Only count scores for non-jagged, parseable answers
                 valid_cell_match_tasks += 1
                 if scores["grid_dim"]:
                     grid_dim_matches += 1
@@ -131,7 +127,6 @@ def generate_scorecard(results: dict, total_tasks: int):
                     exact_matches += 1
                 total_cell_match_score += scores["cell_match"]
 
-    # Calculate averages and percentages, handling potential division by zero
     avg_cell_match_score = (
         (total_cell_match_score / valid_cell_match_tasks)
         if valid_cell_match_tasks > 0
@@ -209,18 +204,16 @@ def run_scoring(config):
     print(f"Comparing {len(answers_ids)} answers to solutions...")
 
     for id_ in answers_ids:
-        # Ensure the solution exists for this ID
         if id_ not in solutions:
             print(
                 f"Warning: Solution for ID {id_} not found in evaluation solutions file. Skipping."
             )
-            task_results[id_] = None  # Mark as uncomparable
+            task_results[id_] = None
             continue
 
-        solution = solutions[id_][0]  # ARC solutions have test/output structure
+        solution = solutions[id_][0]
         answer = answers[id_]
 
-        # Initialize scores for this task
         scores = {
             "is_jagged": False,
             "grid_dim": False,
@@ -228,32 +221,22 @@ def run_scoring(config):
             "exact_match": False,
         }
 
-        # Check if the answer is a valid list of lists
-        # Handle potential None values from parsing
         if (
             answer is None
             or not isinstance(answer, list)
             or not all(isinstance(i, list) for i in answer)
         ):
             print(f"Answer for ID {id_} is invalid or not a list of lists.")
-            task_results[id_] = None  # Mark as unparseable/invalid
-            continue  # Skip scoring for this task
+            task_results[id_] = None
+            continue
 
-        # Check if the solution is valid (should always be, but good practice)
         if not isinstance(solution, list) or not all(
             isinstance(i, list) for i in solution
         ):
             print(f"Warning: Solution format for ID {id_} is unexpected. Skipping.")
-            task_results[id_] = None  # Mark as uncomparable
+            task_results[id_] = None
             continue
 
-        # Check if the answer is jagged *before* calculating scores
-
-        # Most scores will be 0 or False if jagged, as per score function logic
-        # We still calculate them to be consistent, but note it was jagged.
-
-        # Calculate scores using the existing functions
-        # Note: calculation functions handle jagged/shape mismatch internally
         scores["grid_dim"] = calculate_grid_dimension_score(answer, solution)
         scores["cell_match"] = calculate_cell_value_match_normalised(answer, solution)
         scores["exact_match"] = calculate_exact_match_score(answer, solution)
@@ -261,14 +244,12 @@ def run_scoring(config):
             answer, solution
         )
 
-        task_results[id_] = scores  # Store the calculated scores
+        task_results[id_] = scores
 
-        # Optional: Print individual task scores during comparison
         print(
             f"ID: {id_} -> Grid Dim: {scores['grid_dim']}, Cell Match: {scores['cell_match']:.4f}, Exact Match: {scores['exact_match']}, Matching Non Zero: {scores['matching_non_zero']}, Jagged: {scores['is_jagged']}"
         )
 
-    # check for None values in rows
     for id_, scores in task_results.items():
         if scores is None:
             task_results[id_] = {

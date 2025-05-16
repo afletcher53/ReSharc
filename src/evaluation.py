@@ -11,9 +11,6 @@ from src.sft_model import (
 )
 
 evaluation_files = [
-    # "data/generated_sft/evaluation_gpt-3.5-turbo-0125_generations.jsonl",
-    # "data/generated_sft/evaluation_gpt-4o-2024-08-06_generations.jsonl",
-    # "data/generated_sft/evaluation_o4-mini-2025-04-16_generations.jsonl",
     "data/generated_sft/cot_gemin_2-5_flash_thinking_raw_generations.jsonl",
     "data/generated_sft/cot_evaluation_gpt-3.5-turbo-0125_generations.jsonl",
     "data/generated_sft/cot_evaluation_o4-mini-2025-04-16_generations.jsonl",
@@ -52,18 +49,17 @@ def find_last_list_of_lists_with_indices(
         if start_bracket_index != -1:
             potential_json_str = text[start_bracket_index : end_bracket_index + 1]
             try:
-                # Basic check for structure before full JSON parsing
                 if not potential_json_str.startswith(
                     "[["
                 ) or not potential_json_str.endswith("]]"):
                     if not (
                         potential_json_str.startswith("[]")
                         and len(potential_json_str) == 2
-                    ):  # Allow empty list
+                    ):
                         if not (
                             potential_json_str.startswith("[[]")
                             and potential_json_str.endswith("]]")
-                        ):  # Allow list containing empty list
+                        ):
                             raise json.JSONDecodeError(
                                 "Does not start/end with '[[' ']]'",
                                 potential_json_str,
@@ -72,21 +68,17 @@ def find_last_list_of_lists_with_indices(
 
                 parsed_data = json.loads(potential_json_str)
 
-                # Check if it's a list and all elements are lists
                 if isinstance(parsed_data, list) and all(
                     isinstance(item, list) for item in parsed_data
                 ):
-                    # Additional check: ensure internal elements are numbers or compatible types if needed
-                    # (This depends on expected grid content, skipping strict internal type check for now)
                     return parsed_data, start_bracket_index, end_bracket_index + 1
 
             except json.JSONDecodeError:
                 return None, -1, -1
-        # Move to the character before the found ']' to avoid re-checking the same invalid structure
+
         last_checked_end = end_bracket_index
 
 
-# load up the solutions json
 with open("data/arc/arc-agi_evaluation_solutions.json", "r") as f:
     solutions = json.load(f)
 
@@ -94,8 +86,6 @@ with open("data/arc/arc-agi_evaluation_solutions.json", "r") as f:
 def get_solution_from_task_id(task_id: str):
     return solutions[task_id]
 
-
-# load up the JSONL files and convert to pandas dataframe
 
 for file in evaluation_files:
     df = pd.read_json(file, lines=True)
@@ -116,7 +106,6 @@ for file in evaluation_files:
         else:
             solution = solution[0]
 
-        # get the solution from the task_id
         try:
             grid_response, _, _ = find_last_list_of_lists_with_indices(raw_response)
         except Exception as e:

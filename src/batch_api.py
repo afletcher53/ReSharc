@@ -1,31 +1,28 @@
-# scripts/phase1_generate.py
-
 import os
 import sys
 import json
 import yaml
 import argparse
-import time  # For polling
-import uuid  # For unique batch file names and custom_ids
+import time
+import uuid
 
-# --- Path Setup ---
+
 project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 if project_root not in sys.path:
     sys.path.insert(0, project_root)
 print(f"Project Root (added to sys.path): {project_root}")
 print(f"Current Working Directory: {os.getcwd()}")
-# print(f"Python sys.path: {sys.path}") # Can be verbose
-# --- End Path Setup ---
+
 
 from dotenv import load_dotenv
 
-# Import all necessary functions from llm_utils
+
 from src.llm_utils import (
     setup_openrouter_client,
-    setup_openai_client,  # Added
+    setup_openai_client,
 )
 
-# Import arc_utils
+
 try:
     from src.arc_utils import (
         load_arc_tasks,
@@ -37,7 +34,6 @@ except ImportError:
     sys.exit(1)
 
 
-# --- Main Execution Logic ---
 if __name__ == "__main__":
     load_dotenv()
 
@@ -60,7 +56,6 @@ if __name__ == "__main__":
     start_task_id_arg = args.start_task_id
     batch_id_to_retrieve_arg = args.batch_id_to_retrieve
 
-    # 1. Load Configuration
     try:
         with open("config/config.yaml", "r") as f:
             config = yaml.safe_load(f)
@@ -71,24 +66,23 @@ if __name__ == "__main__":
         print(f"Error parsing config file: {e}")
         sys.exit(1)
 
-    # 2. Determine API Provider and Setup Client/Configuration
     api_provider = "openai_batch"
     print(f"Selected API Provider: {api_provider}")
     llm_client = None
-    models_to_use = []  # For OpenRouter or other direct providers
-    openai_batch_settings = {}  # For OpenAI Batch
-    api_settings = {}  # General settings bucket for direct calls
+    models_to_use = []
+    openai_batch_settings = {}
+    api_settings = {}
 
     if api_provider == "openai_batch":
         openai_batch_settings = config.get("openai_batch_settings", {})
         if not openai_batch_settings:
             print("Error: 'openai_batch_settings' not found in config.yaml")
             sys.exit(1)
-        llm_client = setup_openai_client(openai_batch_settings)  # OpenAI client
+        llm_client = setup_openai_client(openai_batch_settings)
         if llm_client is None:
             print("Exiting due to OpenAI client setup failure.")
             sys.exit(1)
-        # Model is defined per batch request body later
+
         print(
             f"Configured for OpenAI Batch API. Model: {openai_batch_settings.get('batch_model_id')}"
         )
@@ -98,7 +92,6 @@ if __name__ == "__main__":
         )
         sys.exit(1)
 
-    # 3. Load ARC Tasks
     arc_data_dir = config.get("arc_data_dir", "data/arc")
 
     evaluation_challenges_file = config.get(
@@ -109,8 +102,6 @@ if __name__ == "__main__":
     if arc_tasks is None:
         sys.exit(1)
 
-    # 4. Prepare Output File
-    # Model name for output file needs to be handled differently for batch
     if api_provider == "openai_batch":
         output_model_name = openai_batch_settings.get(
             "batch_model_id", "openai_batch_model"
@@ -120,7 +111,6 @@ if __name__ == "__main__":
     os.makedirs(os.path.dirname(output_file), exist_ok=True)
     print(f"Results will be saved to: {output_file}")
 
-    # --- 5. Process Tasks ---
     all_task_ids = list(arc_tasks.keys())
     tasks_to_consider = all_task_ids
     if start_task_id_arg:
@@ -150,15 +140,15 @@ if __name__ == "__main__":
         )
 
     results_count = 0
-    total_prompt_tokens = 0  # Will be approximate or from batch output
-    total_completion_tokens = 0  # Will be approximate or from batch output
+    total_prompt_tokens = 0
+    total_completion_tokens = 0
 
     template = "REREAD_PROMPT_TEMPLATE"
-    # --- OpenAI Batch API Path ---
+
     if api_provider == "openai_batch":
         openai_model_id = openai_batch_settings.get("batch_model_id")
         batch_input_requests = []
-        task_details_for_mapping = {}  # To map custom_id back to task_id, etc.
+        task_details_for_mapping = {}
 
         if not batch_id_to_retrieve_arg:
             print("\n--- Preparing OpenAI Batch Input File ---")
@@ -170,23 +160,20 @@ if __name__ == "__main__":
 
                 task_prompt_section = create_task_prompt_section(task_data)
 
-                # For chat completions, messages format is preferred
                 full_prompt_messages = [
                     {
                         "role": "user",
                         "content": config.get(template, "")
                         .format(task_prompt_section=task_prompt_section)
                         .strip(),
-                    },  # System prompt part
+                    },
                 ]
 
-                custom_id = (
-                    f"task_{task_id}_req_{uuid.uuid4()}"  # Unique ID for mapping
-                )
+                custom_id = f"task_{task_id}_req_{uuid.uuid4()}"
                 task_details_for_mapping[custom_id] = {
                     "task_id": task_id,
                     "test_case_index": 0,
-                }  # Assuming one test case for now
+                }
 
                 batch_request = {
                     "custom_id": custom_id,
@@ -195,11 +182,7 @@ if __name__ == "__main__":
                     "body": {
                         "model": openai_model_id,
                         "messages": full_prompt_messages,
-                        "max_completion_tokens": 5024,  # Add to config if needed
-                        # "temperature": openai_batch_settings.get(
-                        #     "temperature", 0.7
-                        # ),  # Add to config
-                        # Add other parameters like top_p, n, etc. as needed
+                        "max_completion_tokens": 5024,
                     },
                 }
                 batch_input_requests.append(batch_request)
@@ -212,7 +195,6 @@ if __name__ == "__main__":
 
             print(f"Total requests prepared for batch: {len(batch_input_requests)}")
 
-            # Save batch input to a file
             batch_input_file_prefix = openai_batch_settings.get(
                 "batch_input_file_prefix", "data/batches/input/batch_input"
             )
@@ -230,7 +212,6 @@ if __name__ == "__main__":
                 print(f"Error writing batch input file {batch_input_filename}: {e}")
                 sys.exit(1)
 
-            # Save task_details_for_mapping for later use if script is re-run for retrieval
             mapping_filename = batch_input_filename.replace(".jsonl", "_mapping.json")
             try:
                 with open(mapping_filename, "w", encoding="utf-8") as f_map:
@@ -238,9 +219,7 @@ if __name__ == "__main__":
                 print(f"Task mapping file saved: {mapping_filename}")
             except IOError as e:
                 print(f"Error writing mapping file {mapping_filename}: {e}")
-                # Continue, as batch can still be created
 
-            # Upload the file to OpenAI
             print("Uploading batch input file to OpenAI...")
             try:
                 with open(batch_input_filename, "rb") as f_upload:
@@ -252,7 +231,6 @@ if __name__ == "__main__":
                 print(f"Error uploading file to OpenAI: {e}")
                 sys.exit(1)
 
-            # Create the batch
             print("Creating batch job on OpenAI...")
             try:
                 completion_window = openai_batch_settings.get(
@@ -270,40 +248,27 @@ if __name__ == "__main__":
                 )
                 print(f"To retrieve, use: --batch_id_to_retrieve {created_batch.id}")
                 print(f"Also, ensure the mapping file is available: {mapping_filename}")
-                sys.exit(0)  # Exit after creation, retrieval is a separate step/run
+                sys.exit(0)
 
             except Exception as e:
                 print(f"Error creating batch job on OpenAI: {e}")
                 sys.exit(1)
 
-        # --- OpenAI Batch Retrieval and Processing Path ---
         elif batch_id_to_retrieve_arg:
             batch_id = batch_id_to_retrieve_arg
             print(f"\n--- Retrieving and Processing OpenAI Batch ID: {batch_id} ---")
 
-            # Attempt to load the corresponding mapping file
-            # This assumes a naming convention or requires user to specify mapping file
-            # For simplicity, let's try to find a mapping file related to the output file or a generic one
-            # A more robust way is to save batch_id with mapping file name during creation
-            # For now, let's assume user has it or we prompt for it.
-            # A simple heuristic:
             potential_mapping_file_prefix = openai_batch_settings.get(
                 "batch_input_file_prefix", "data/batches/input/batch_input"
             )
-            # This is tricky; best to save mapping file path with batch ID, or require it as an arg
+
             print(
                 f"IMPORTANT: Ensure you have the correct '_mapping.json' file that was generated when batch {batch_id} was created."
             )
             print(
                 f"The script will try to infer it, but you might need to specify it if it fails."
             )
-            # Simplified: User must ensure the latest mapping file is the correct one if not specified.
-            # This part needs a more robust solution for mapping file discovery in a real scenario.
-            # For this example, we'll assume it's hard to automatically find.
-            # Prompting user or requiring another argument for mapping_file_path is safer.
-            # For now, let's require the user to place the mapping file where it can be found or specify path.
-            # A placeholder for finding the mapping:
-            # We'll try to find *a* mapping file in the batch input directory. This is NOT robust.
+
             mapping_file_path = None
             batch_input_dir = os.path.dirname(
                 openai_batch_settings.get(
@@ -311,7 +276,6 @@ if __name__ == "__main__":
                 )
             )
             try:
-                # Look for the most recent mapping file in that dir (HIGHLY UNRELIABLE - just for demo)
                 candidate_maps = [
                     os.path.join(batch_input_dir, f)
                     for f in os.listdir(batch_input_dir)
@@ -348,14 +312,12 @@ if __name__ == "__main__":
                     if batch_status.status == "completed":
                         print("Batch completed. Retrieving results...")
                         output_file_id = batch_status.output_file_id
-                        error_file_id = batch_status.error_file_id  # Handle errors too
+                        error_file_id = batch_status.error_file_id
 
                         if error_file_id:
                             print(
                                 f"Batch has errors. Error File ID: {error_file_id}. Check OpenAI dashboard for details."
                             )
-                            # Optionally download and process error file.
-                            # error_content = llm_client.files.content(error_file_id).read() (decode if necessary)
 
                         if not output_file_id:
                             print(
@@ -370,7 +332,6 @@ if __name__ == "__main__":
                             "utf-8"
                         )
 
-                        # Save raw batch output for inspection
                         os.makedirs(
                             openai_batch_settings.get(
                                 "batch_output_dir", "data/batches/output/"
@@ -389,7 +350,6 @@ if __name__ == "__main__":
                             f"Raw batch results saved to: {raw_batch_output_filename}"
                         )
 
-                        # Process results
                         with open(output_file, "a", encoding="utf-8") as f_out_final:
                             for line in batch_results_raw.strip().split("\n"):
                                 try:
@@ -418,7 +378,6 @@ if __name__ == "__main__":
                                         )
                                         == 200
                                     ):
-                                        # Assuming chat completion format
                                         choices = response_body.get("choices", [])
                                         if choices:
                                             raw_llm_response = (
@@ -447,11 +406,11 @@ if __name__ == "__main__":
                                             "api_provider": "openai_batch",
                                             "teacher_model": response_body.get(
                                                 "model", openai_model_id
-                                            ),  # Model from response or config
+                                            ),
                                             "raw_response": raw_llm_response,
                                             "prompt_tokens": prompt_tokens_item,
                                             "completion_tokens": completion_tokens_item,
-                                            "custom_id": custom_id,  # For traceability
+                                            "custom_id": custom_id,
                                             "batch_id": batch_id,
                                         }
                                         f_out_final.write(
@@ -476,7 +435,7 @@ if __name__ == "__main__":
                                     print(
                                         f"Error processing result item for custom_id {custom_id}: {e_proc}"
                                     )
-                        break  # Exit while loop
+                        break
 
                     elif batch_status.status in [
                         "failed",
@@ -492,7 +451,7 @@ if __name__ == "__main__":
                                 f"Error File ID: {batch_status.error_file_id}. Check OpenAI dashboard."
                             )
                         sys.exit(1)
-                    else:  # e.g., validating, in_progress
+                    else:
                         print(
                             f"Waiting for batch to complete. Sleeping for {poll_interval}s..."
                         )
@@ -503,8 +462,8 @@ if __name__ == "__main__":
                         f"Error while checking batch status or processing results: {e}"
                     )
                     print(f"Sleeping for {poll_interval}s before retrying...")
-                    time.sleep(poll_interval)  # Wait before retrying status check
-            # End of OpenAI Batch retrieval and processing
+                    time.sleep(poll_interval)
+
     else:
         print(f"API Provider '{api_provider}' not implemented for processing loop.")
 
@@ -521,9 +480,7 @@ if __name__ == "__main__":
     else:
         print(f"Attempted processing for {len(task_ids_to_process)} task IDs.")
 
-    if (
-        start_task_id_arg and api_provider != "openai_batch"
-    ):  # Start_task_id less relevant for batch submission phase
+    if start_task_id_arg and api_provider != "openai_batch":
         print(
             f"(Processing started from task ID: {start_task_id_arg if start_task_id_arg in all_task_ids else 'beginning (start ID not found)'})"
         )
