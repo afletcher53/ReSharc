@@ -51,7 +51,7 @@ A prediction grid is defined as $P$, and the ground truth solution grid as $S$. 
     $$
     \text{GDM} =
     \begin{cases}
-    1 & \begin{tabular}{@{}l@{}}if $P \text{ is valid}$ \\ $\land \text{ shape}(P) = \text{shape}(S)$\end{tabular} \\
+    1 & \text{if } P \text{ is valid and shape}(P) = \text{shape}(S) \\
     0 & \text{otherwise}
     \end{cases}
     $$
@@ -68,11 +68,7 @@ A prediction grid is defined as $P$, and the ground truth solution grid as $S$. 
     $$
     \text{FPA} =
     \begin{cases}
-    \frac{\sum_{i,j} I(P_{i,j} = S_{i,j} \land S_{i,j} \neq 0)}{\sum_{i,j} I(S_{i,j} \neq 0)} &
-    \begin{tabular}{@{}l@{}}
-    if GDM $= 1$ \\
-    $\land \sum_{i,j} I(S_{i,j} \neq 0) > 0$
-    \end{tabular} \\
+    \frac{\sum_{i,j} I(P_{i,j} = S_{i,j} \text{ and } S_{i,j} \neq 0)}{\sum_{i,j} I(S_{i,j} \neq 0)} & \text{if GDM}=1 \text{ and } \sum_{i,j} I(S_{i,j} \neq 0) > 0 \\
     0 & \text{otherwise}
     \end{cases}
     $$
@@ -80,12 +76,10 @@ A prediction grid is defined as $P$, and the ground truth solution grid as $S$. 
     $$
     \text{EM} =
     \begin{cases}
-    1 & \text{if } P \text{ is valid} \land P = S \\
+    1 & \text{if } P \text{ is valid and } P = S \\
     0 & \text{otherwise}
     \end{cases}
     $$
-
-
 ## Results Highlights
 
 * **OpenAI o4 Mini (Medium) with CoT + Repeating:** Achieved an EM score of 0.180 (a 10.4% relative increase over baseline CoT's 0.163). GDM: 0.180, PA: 0.172, FPA: 0.169.
