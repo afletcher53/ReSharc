@@ -42,42 +42,48 @@ All experiments were conducted on the 400 evaluation samples in the ARC corpus, 
 * **CoT + Repeating:** LLM re-reads the question before answering.
 
 *(Refer to Appendix A in the paper for detailed prompt structures.)*
-
 ### Evaluation Metrics
 
 A prediction grid is defined as $P$, and the ground truth solution grid as $S$. A prediction $P$ is considered valid if it is a non-jagged grid.
 
 1.  **Grid Dimension Match (GDM):** Assesses if the predicted output grid has the correct dimensions.
+
     $$
-    \text{GDM} =
+    \textnormal{GDM} =
     \begin{cases}
-    1 & \text{if } P \text{ is valid and shape}(P) = \text{shape}(S) \\
-    0 & \text{otherwise}
+    1 & \textnormal{if } P \textnormal{ is valid and } \textnormal{shape}(P) = \textnormal{shape}(S) \\
+    0 & \textnormal{otherwise}
     \end{cases}
     $$
+
 2.  **Pixel Accuracy (PA):** Measures the fraction of correctly predicted cells, given correct dimensions ($N$ is the total number of cells).
+
     $$
-    \text{PA} =
+    \textnormal{PA} =
     \begin{cases}
-    \frac{1}{N} \sum_{i,j} I(P_{i,j} = S_{i,j}) & \text{if GDM} = 1 \\
-    0 & \text{otherwise}
+    \frac{1}{N} \sum_{i,j} I(P_{i,j} = S_{i,j}) & \textnormal{if GDM} = 1 \\
+    0 & \textnormal{otherwise}
     \end{cases}
     $$
     Where $I(\cdot)$ is the indicator function.
+
 3.  **Foreground Pixel Accuracy (FPA):** Focuses on the accuracy of non-background (non-zero) cells in the solution $S$, given correct dimensions.
+
     $$
-    \text{FPA} =
+    \textnormal{FPA} =
     \begin{cases}
-    \frac{\sum_{i,j} I(P_{i,j} = S_{i,j} \text{ and } S_{i,j} \neq 0)}{\sum_{i,j} I(S_{i,j} \neq 0)} & \text{if GDM}=1 \text{ and } \sum_{i,j} I(S_{i,j} \neq 0) > 0 \\
-    0 & \text{otherwise}
+    \frac{\sum_{i,j} I(P_{i,j} = S_{i,j} \textnormal{ and } S_{i,j} \neq 0)}{\sum_{i,j} I(S_{i,j} \neq 0)} & \textnormal{if GDM}=1 \textnormal{ and } \sum_{i,j} I(S_{i,j} \neq 0) > 0 \\
+    0 & \textnormal{otherwise}
     \end{cases}
     $$
+
 4.  **Exact Match (EM):** The prediction must be identical to the solution in dimensions and content.
+
     $$
-    \text{EM} =
+    \textnormal{EM} =
     \begin{cases}
-    1 & \text{if } P \text{ is valid and } P = S \\
-    0 & \text{otherwise}
+    1 & \textnormal{if } P \textnormal{ is valid and } P = S \\
+    0 & \textnormal{otherwise}
     \end{cases}
     $$
 
