@@ -3,7 +3,9 @@
 **Paper:** Improving ARC-AGI-1 performance through inference-time strategies and prompt engineering
 **Authors:** Jason Chan, Aaron Fletcher (School of Computer Science, Sheffield University)
 **Contact:** jlychan1@sheffield.ac.uk, ahafletcher1@sheffield.ac.uk
-**Repository:** [https://github.com/afletcher53/resharc](https://github.com/afletcher53/resharc) ## Abstract
+**Repository:** [https://github.com/afletcher53/resharc](https://github.com/afletcher53/resharc) 
+
+## Abstract
 
 This project investigates strategies to enhance the performance of Large Language Models (LLMs) on the *Abstraction and Reasoning Corpus* (ARC-AGI-1). The ARC challenges AI systems with tasks requiring genuine reasoning from very few examples, a domain where current LLMs often falter. This work introduces more granular evaluation metrics—Grid Dimension Match (GDM), Pixel Accuracy (PA), and Foreground Pixel Accuracy (FPA)—alongside the standard Exact Match (EM). Baselines for various LLMs are established using Chain-of-Thought (CoT) prompting. The study further explores inference-time prompt engineering techniques, specifically 'Reflection' and 'Repeating', demonstrating their ability to improve EM scores and partial credit metrics on OpenAI's o4 Mini (Medium) model without model retraining. These findings highlight the importance of nuanced evaluation and showcase how simple, cognitively-inspired prompting can significantly boost LLM reasoning on complex ARC tasks.
 
